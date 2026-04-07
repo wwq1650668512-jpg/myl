@@ -1,0 +1,368 @@
+project: gut_drug_microbiome_interaction
+last_reviewed: 2026-04-01
+
+entity_normalization:
+  drug:
+    primary_ids:
+      - PubChem CID
+      - ChEBI ID
+    structural_keys:
+      - canonical_smiles
+      - inchikey
+  microbe:
+    primary_ids:
+      - NCBI Taxonomy ID
+      - strain_name
+
+sources:
+  - id: maier_2018_nature25979
+    stage:
+      - step1
+    priority: primary
+    resource_type: paper_dataset
+    title: Extensive impact of non-antibiotic drugs on human gut bacteria
+    published: 2018-03-29
+    url: https://pubmed.ncbi.nlm.nih.gov/29555994/
+    sample_unit: drug_x_bacterial_strain
+    scale:
+      drugs_tested: 1197
+      bacterial_strains: 40
+    usable_fields:
+      - drug_name
+      - drug_structure
+      - bacterial_strain
+      - growth_response
+      - assay_metadata
+    role:
+      - step1_gold_labels
+      - step1_quantitative_effect_source
+    notes:
+      - Main experimental source for drug-to-microbe growth effects.
+      - Promotion labels likely need to be derived from continuous growth values.
+
+  - id: mccoubrey_2021_pharmaceutics13071026
+    stage:
+      - step1
+    priority: supporting
+    resource_type: benchmark_paper
+    title: Machine Learning Uncovers Adverse Drug Effects on Intestinal Bacteria
+    published: 2021-07-06
+    url: https://pmc.ncbi.nlm.nih.gov/articles/PMC8308984/
+    sample_unit: drug_x_bacterial_strain
+    scale:
+      interactions: 18600
+      bacterial_strains: 40
+    role:
+      - step1_public_baseline
+    notes:
+      - Derived from Maier et al. data.
+      - Useful as a reproducible benchmark rather than a new gold-label source.
+
+  - id: wang_2023_bmcbioinformatics_338
+    stage:
+      - step1
+    priority: supporting
+    resource_type: benchmark_paper
+    title: Prediction of the effects of small molecules on the gut microbiome using machine learning method integrating with optimal molecular features
+    published: 2023-09-12
+    url: https://link.springer.com/article/10.1186/s12859-023-05455-1
+    sample_unit: drug
+    scale:
+      cleaned_compounds: 1181
+      anti_commensal: 391
+      commensal: 790
+    role:
+      - step1_public_baseline
+      - feature_engineering_reference
+    notes:
+      - Binary anti-commensal benchmark aggregated from Maier et al.
+
+  - id: zimmermann_2019_nature_s41586_019_1291_3
+    stage:
+      - step2
+    priority: primary
+    resource_type: paper_dataset
+    title: Mapping human microbiome drug metabolism by gut bacteria and their genes
+    published: 2019-06-03
+    url: https://www.nature.com/articles/s41586-019-1291-3
+    sample_unit: drug_x_bacterial_isolate
+    scale:
+      gut_bacteria: 76
+      orally_administered_drugs: 271
+    usable_fields:
+      - drug_name
+      - bacterial_isolate
+      - depletion_or_metabolism_label
+      - metabolite_identity
+      - gene_association
+    role:
+      - step2_gold_labels
+      - step2_gene_linking
+    notes:
+      - Strongest primary source for isolate-level microbial drug metabolism.
+
+  - id: javdan_2020_cell_mdm_screen
+    stage:
+      - step2
+      - step3
+    priority: primary
+    resource_type: paper_dataset
+    title: Personalized Mapping of Drug Metabolism by the Human Gut Microbiome
+    published: 2020-06-10
+    url: https://pmc.ncbi.nlm.nih.gov/articles/PMC8591631/
+    sample_unit: drug_x_personalized_microbiome_community
+    usable_fields:
+      - subject_specific_microbiome
+      - ex_vivo_metabolism
+      - metabolite_detection
+      - functional_metagenomics
+    role:
+      - step2_community_level_labels
+      - step3_personalized_validation
+    notes:
+      - Complements isolate-level data with community-level metabolism.
+
+  - id: agora2_2023_nature_biotechnology
+    stage:
+      - step2
+      - step3
+    priority: primary
+    resource_type: database_and_models
+    title: Genome-scale metabolic reconstruction of 7,302 human microorganisms for personalized medicine
+    published: 2023-09-14
+    url: https://pmc.ncbi.nlm.nih.gov/articles/PMC10497413/
+    download_url: https://www.vmh.life/files/reconstructions/AGORA2/
+    sample_unit: strain_model
+    scale:
+      strains: 7302
+      species: 1738
+      phyla: 25
+      modeled_drugs: 98
+      unique_drug_metabolites: 353
+    usable_fields:
+      - strain_model_id
+      - reactions
+      - genes
+      - drug_biotransformation_rules
+      - exchange_fluxes
+    role:
+      - step2_mechanistic_features
+      - step3_simulation_backbone
+    notes:
+      - Best open mechanistic resource for strain-resolved metabolic modeling in this project.
+
+  - id: gutmgene_v2_2025
+    stage:
+      - step2
+      - step3
+    priority: primary
+    resource_type: curated_database
+    title: gutMGene v2.0
+    published: 2025-01-06
+    url: https://pmc.ncbi.nlm.nih.gov/articles/PMC11701569/
+    website: http://bio-computing.hrbmu.edu.cn/gutmgene
+    sample_unit: association_record
+    scale:
+      human_literature_associations: 1338
+      human_microbes: 282
+      human_microbial_metabolites: 277
+      human_host_genes: 238
+      total_literature_based_associations: 4860
+    usable_fields:
+      - gut_microbe
+      - microbial_metabolite
+      - host_gene
+      - evidence_type
+      - literature_count
+    role:
+      - microbe_metabolite_host_knowledge_graph
+      - mechanistic_context_for_step2_and_step3
+    notes:
+      - Includes causal and correlational evidence labels.
+
+  - id: rhea_reaction_knowledgebase
+    stage:
+      - step2
+    priority: primary
+    resource_type: reaction_database
+    title: Rhea reaction knowledgebase
+    url: https://www.rhea-db.org/
+    api_help_url: https://api.rhea-db.org/help/what-is-rhea
+    sample_unit: biochemical_reaction
+    role:
+      - reaction_template_standardization
+      - product_mapping
+    notes:
+      - Uses ChEBI identifiers and is suitable for open reaction template mapping.
+
+  - id: chebi
+    stage:
+      - step2
+      - step3
+    priority: primary
+    resource_type: chemical_ontology
+    title: ChEBI - Chemical Entities of Biological Interest
+    url: https://www.ebi.ac.uk/chebi/
+    downloads_url: https://www.ebi.ac.uk/chebi/downloads
+    sample_unit: chemical_entity
+    role:
+      - metabolite_identifier_normalization
+      - ontology_backbone_for_reaction_mapping
+    notes:
+      - Open-access ontology and download files are available.
+
+  - id: pubchem
+    stage:
+      - step1
+      - step2
+      - step3
+    priority: primary
+    resource_type: chemical_database
+    title: PubChem
+    url: https://pubchem.ncbi.nlm.nih.gov/
+    api_url: https://pubchem.ncbi.nlm.nih.gov/docs/pug-rest
+    sample_unit: compound
+    role:
+      - drug_structure_normalization
+      - descriptor_lookup
+      - metabolite_identifier_mapping
+    notes:
+      - Programmatic access via PUG-REST is available.
+
+  - id: ncbi_taxonomy
+    stage:
+      - step1
+      - step2
+      - step3
+    priority: primary
+    resource_type: taxonomy_database
+    title: NCBI Taxonomy
+    url: https://www.ncbi.nlm.nih.gov/taxonomy
+    site_guide_url: https://www.ncbi.nlm.nih.gov/sites/guide/taxonomy/
+    sample_unit: taxon
+    role:
+      - microbial_identifier_normalization
+      - lineage_features
+    notes:
+      - Standard backbone for organism names and lineage handling.
+
+  - id: curated_metagenomic_data
+    stage:
+      - step3
+    priority: primary
+    resource_type: curated_cohort_package
+    title: curatedMetagenomicData
+    url: https://bioconductor.org/packages/release/data/experiment/html/curatedMetagenomicData.html
+    vignette_url: https://master.bioconductor.org/packages/release/data/experiment/vignettes/curatedMetagenomicData/inst/doc/curatedMetagenomicData.html
+    sample_unit: human_microbiome_sample
+    usable_fields:
+      - species_abundance
+      - pathway_abundance
+      - gene_family_abundance
+      - sample_metadata
+    role:
+      - standardized_cohort_input_for_step3
+      - cohort_level_external_validation
+    notes:
+      - Harmonized MetaPhlAn3 and HUMAnN3 outputs are especially useful.
+
+  - id: gmrepo_v3_2026
+    stage:
+      - step3
+    priority: primary
+    resource_type: curated_database
+    title: GMrepo v3
+    published: 2026-01-06
+    url: https://pmc.ncbi.nlm.nih.gov/articles/PMC12807640/
+    website: https://gmrepo.humangut.info
+    sample_unit: human_gut_sample
+    scale:
+      projects: 890
+      runs_or_samples: 118965
+      sixteen_s: 87048
+      metagenomic: 31917
+      phenotypes: 302
+    usable_fields:
+      - taxonomic_profiles
+      - phenotype_labels
+      - country
+      - age
+      - sex
+      - bmi
+      - marker_taxa
+    role:
+      - large_scale_environment_library_for_step3
+      - health_vs_disease_reference_background
+    notes:
+      - Valuable for building realistic gut community priors and disease contrasts.
+
+  - id: mgnify
+    stage:
+      - step3
+    priority: supporting
+    resource_type: public_microbiome_platform
+    title: MGnify
+    url: https://www.ebi.ac.uk/about/teams/microbiome-informatics
+    training_url: https://www.ebi.ac.uk/training/online/courses/mgnify-quick-tour/what-is-mgnify/
+    sample_unit: microbiome_study_or_sample
+    role:
+      - public_study_discovery
+      - additional_environmental_context
+    notes:
+      - Useful for discovering analyzed microbiome studies and linked ENA data.
+
+  - id: ihmp_2019
+    stage:
+      - step3
+    priority: supporting
+    resource_type: multiomics_consortium
+    title: The Integrative Human Microbiome Project
+    published: 2019-05-29
+    url: https://www.nature.com/articles/s41586-019-1238-8
+    sample_unit: longitudinal_subject_visit
+    role:
+      - longitudinal_validation
+      - host_microbiome_multiomics_context
+    notes:
+      - Useful for validating temporal and host-linked simulation behavior.
+
+  - id: microbiome_metabolome_collection_2022
+    stage:
+      - step3
+    priority: primary
+    resource_type: curated_dataset_collection
+    title: The gut microbiome-metabolome dataset collection
+    published: 2022-10-15
+    url: https://pmc.ncbi.nlm.nih.gov/articles/PMC9569371/
+    code_url: https://github.com/borenstein-lab/microbiome-metabolome-curated-data
+    sample_unit: paired_microbiome_metabolome_sample
+    scale:
+      included_studies: 14
+    usable_fields:
+      - genus_abundance
+      - species_abundance_when_available
+      - metabolite_abundance
+      - metadata
+    role:
+      - step3_metabolite_level_validation
+    notes:
+      - Useful for checking whether simulated metabolite shifts match observed data.
+
+  - id: gmwi2_2024
+    stage:
+      - step3
+    priority: primary
+    resource_type: health_index_model
+    title: Gut Microbiome Wellness Index 2
+    published: 2024-08-28
+    url: https://www.nature.com/articles/s41467-024-51651-9
+    sample_unit: stool_metagenome
+    scale:
+      pooled_metagenomes: 8069
+      studies: 54
+      countries: 26
+    role:
+      - health_index_endpoint
+      - dysbiosis_monitoring
+    notes:
+      - Open-source command-line tool is reported by the paper.

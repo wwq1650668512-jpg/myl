@@ -1,0 +1,32 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environments
+.venv/
+venv/
+
+# Editor and OS noise
+.DS_Store
+Thumbs.db
+
+# Local tool state
+.codex
+.codex/
+
+# Build / temp
+*.log
+tmp/
+temp/
+
+# Large generated project artifacts
+data/
+models/
+predictions/
+logs/
+
+# Optional local outputs
+*.joblib
+*.pt
+*.ckpt

@@ -1,0 +1,3 @@
+# Optional Step 1 deep-learning stack.
+# Install this in a dedicated environment after choosing an appropriate PyTorch build.
+chemprop

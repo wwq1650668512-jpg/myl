@@ -1,0 +1,102 @@
+last_updated: 2026-04-01
+
+global_assumptions:
+  - Effect labels should be derived from raw quantitative assay values whenever possible.
+  - All thresholds below are working assumptions and should be recalibrated after inspecting assay variance and replicate quality.
+  - Species and strain identifiers must be normalized before label aggregation.
+
+step1:
+  task_name: drug_to_microbe_effect
+  outputs:
+    categorical_label:
+      values:
+        - inhibit
+        - promote
+        - no_effect
+    continuous_label:
+      name: effect_score
+      description: >
+        Signed standardized growth effect. Negative values denote inhibition,
+        positive values denote promotion, and values near zero denote no measurable effect.
+  preferred_quantitative_inputs:
+    - delta_auc_vs_control
+    - relative_growth_ratio
+    - normalized_od_endpoint
+  default_thresholds:
+    inhibit:
+      effect_score_lte: -0.20
+      significance_q_value_lt: 0.05
+    promote:
+      effect_score_gte: 0.20
+      significance_q_value_lt: 0.05
+    no_effect:
+      absolute_effect_score_lt: 0.20
+  modeling_notes:
+    - Train tri-class classification and continuous regression jointly.
+    - If raw p-values are unavailable, derive provisional labels from standardized effect size only.
+    - Because promotion labels are likely rare, use class weighting or focal loss.
+
+step2:
+  task_name: microbe_to_drug_metabolism
+  outputs:
+    metabolism_label:
+      values:
+        - metabolized
+        - not_metabolized
+        - uncertain
+    reaction_class:
+      values:
+        - reduction
+        - hydrolysis
+        - deacetylation
+        - dehydroxylation
+        - demethylation
+        - deconjugation
+        - ring_cleavage
+        - bioaccumulation_or_unresolved_depletion
+        - other
+    product_prediction:
+      description: Ranked list of candidate products normalized to ChEBI and/or PubChem identifiers.
+  default_thresholds:
+    metabolized:
+      parent_drug_fraction_change_lte: -0.20
+      any_product_detected: true
+    not_metabolized:
+      parent_drug_fraction_change_gt: -0.20
+      any_product_detected: false
+  labeling_priority:
+    - experimentally_resolved_product
+    - literature_curated_reaction
+    - depletion_without_product
+  modeling_notes:
+    - Start with binary metabolism prediction before product prediction.
+    - Reaction classes should be mapped to Rhea/ChEBI when possible.
+    - Keep unresolved depletion as a separate label to avoid forcing incorrect product calls.
+
+step3:
+  task_name: gut_community_simulation
+  state_variables:
+    - microbe_abundance
+    - parent_drug_concentration
+    - metabolite_concentration
+    - key_host_related_metabolites
+    - health_index
+  initialization_rules:
+    abundance_input:
+      expected_type:
+        - relative_abundance
+        - species_or_strain_level
+      renormalize_to_one: true
+    drug_input:
+      expected_type:
+        - parent_drug_amount
+        - dosing_schedule
+  endpoint_scores:
+    wellness_score:
+      preferred_source: GMWI2
+    development_score:
+      formula: efficacy_proxy - dysbiosis_penalty - uncertainty_penalty
+  modeling_notes:
+    - Use discrete time updates before moving to full mechanistic FBA.
+    - Preserve uncertainty intervals for all simulated endpoints.
+    - Never interpret development_score as a direct clinical efficacy estimate.

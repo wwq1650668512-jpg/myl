@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Gut Drug-Microbiome Predictor</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="page-glow page-glow-a"></div>
+    <div class="page-glow page-glow-b"></div>
+
+    <header class="hero">
+      <div class="hero-copy">
+        <span class="kicker">Gut Drug-Microbiome Visual Lab</span>
+        <h1>肠道药物-微生物三步预测平台</h1>
+        <p>
+          把 Step 1 药物对微生物影响、Step 2 微生物对药物代谢、Step 3
+          群落时间推演接到同一个交互页面里。现在既能查询库内药物，也能直接输入新药
+          SMILES 做三步预测。
+        </p>
+      </div>
+      <div class="hero-stats" id="heroStats"></div>
+    </header>
+
+    <main class="dashboard">
+      <section class="panel control-panel">
+        <div class="panel-head">
+          <span class="eyebrow">Control Center</span>
+          <h2>用 SMILES 直接预测新药</h2>
+        </div>
+
+        <div class="prediction-focus">
+          <div class="focus-copy">
+            <strong>主入口：输入新药 SMILES</strong>
+            <p>
+              只需要 SMILES 就能触发 Step 1、Step 2 和 Step 3；药物名字只是可选备注，不再是必填项。
+            </p>
+          </div>
+          <div class="focus-chip" id="predictionModeBanner">当前模式：库内药物查询</div>
+        </div>
+
+        <div class="custom-grid">
+          <label class="field field-span-2">
+            <span>新药 SMILES</span>
+            <textarea
+              id="customSmilesInput"
+              rows="3"
+              placeholder="例如：CC(=O)Oc1ccccc1C(=O)O"
+            ></textarea>
+          </label>
+
+          <label class="field">
+            <span>药物名称（可选）</span>
+            <input id="customDrugNameInput" type="text" placeholder="可留空，仅用于页面展示" />
+          </label>
+
+          <label class="field">
+            <span>微生物面板</span>
+            <div class="field-note" id="microbePanelNote">
+              新药预测默认直接展示 83 个微生物整面板结果，无需手动选择单个菌。
+            </div>
+            <div class="field-help" id="microbeSelectionHint">页面展示的是整面板分布、Top 菌列表和面板汇总。</div>
+          </label>
+
+          <label class="field">
+            <span>Step 3 场景</span>
+            <select id="scenarioSelect"></select>
+          </label>
+
+          <label class="field">
+            <span>真实 cohort 预设</span>
+            <select id="communityTableSelect"></select>
+            <div class="field-help">选择后会用真实 `community_table.csv` 初始化群落，并覆盖内置场景。</div>
+          </label>
+
+          <label class="field field-span-2">
+            <span>community_table 路径（可选）</span>
+            <input
+              id="communityTablePathInput"
+              type="text"
+              placeholder="例如：data/processed/step3/cohorts/example/sample_01_community.csv"
+            />
+            <div class="field-help" id="communityTableHint">
+              可直接填写 community table 路径。手动路径优先级高于上面的预设下拉。
+            </div>
+          </label>
+
+          <label class="field">
+            <span>说明</span>
+            <div class="field-note">
+              页面会为当前 SMILES 自动生成内部药物 ID，并在现成的 83 菌扩展面板上完成三步预测。
+            </div>
+          </label>
+        </div>
+
+        <div class="action-row">
+          <button class="button button-primary" id="predictCustomButton">预测新药</button>
+          <button class="button button-ghost" id="resetLibraryButton">切回库内药物</button>
+          <button class="button button-secondary" id="runSimulationButton">运行 Step 3</button>
+          <button class="button button-ghost" id="compareScenariosButton">比较全部内置场景</button>
+          <button class="button button-ghost" id="refreshPredictionsButton">刷新当前结果</button>
+        </div>
+
+        <details class="advanced-box library-box">
+          <summary>库内药物查询</summary>
+          <div class="control-grid library-grid">
+            <label class="field">
+              <span>药物过滤</span>
+              <input id="drugFilterInput" type="text" placeholder="输入药物名或 Prestwick ID" />
+            </label>
+
+            <label class="field field-span-2">
+              <span>药物</span>
+              <select id="drugSelect"></select>
+            </label>
+          </div>
+        </details>
+
+        <details class="advanced-box">
+          <summary>Step 3 高级参数</summary>
+          <div class="advanced-grid">
+            <label class="field">
+              <span>时间步数</span>
+              <input id="nStepsInput" type="number" min="3" max="60" value="14" />
+            </label>
+            <label class="field">
+              <span>初始剂量</span>
+              <input id="initialDoseInput" type="number" min="0" step="0.1" value="1.0" />
+            </label>
+            <label class="field">
+              <span>重复剂量</span>
+              <input id="repeatDoseInput" type="number" min="0" step="0.1" value="1.0" />
+            </label>
+            <label class="field">
+              <span>给药间隔</span>
+              <input id="dosingIntervalInput" type="number" min="1" step="1" value="1" />
+            </label>
+            <label class="field">
+              <span>母药清除率</span>
+              <input id="drugClearanceInput" type="number" min="0" max="1" step="0.01" value="0.12" />
+            </label>
+            <label class="field">
+              <span>产物清除率</span>
+              <input id="productClearanceInput" type="number" min="0" max="1" step="0.01" value="0.18" />
+            </label>
+            <label class="field">
+              <span>代谢强度系数</span>
+              <input id="metabolismScaleInput" type="number" min="0" step="0.05" value="0.85" />
+            </label>
+            <label class="field">
+              <span>药物压力系数</span>
+              <input id="effectScaleInput" type="number" min="0" step="0.05" value="0.55" />
+            </label>
+            <label class="field">
+              <span>生态回拉强度</span>
+              <input id="ecologyStrengthInput" type="number" min="0" step="0.05" value="0.20" />
+            </label>
+          </div>
+        </details>
+
+        <div class="inline-meta" id="selectedDrugMeta"></div>
+      </section>
+
+      <section class="panel demo-panel">
+        <div class="panel-head">
+          <span class="eyebrow">Dataset Snapshot</span>
+          <h2>当前模型覆盖范围</h2>
+        </div>
+        <div id="bootstrapSummary" class="summary-grid"></div>
+        <div class="subpanel">
+          <h3>Step 3 Demo 排名</h3>
+          <div id="demoRanking" class="ranking-list"></div>
+        </div>
+      </section>
+
+      <section class="module-grid">
+        <article class="panel module-panel">
+          <div class="panel-head">
+            <span class="eyebrow step step-1">Step 1</span>
+            <h2>Drug -> Microbe Effect</h2>
+          </div>
+          <div id="step1PairStats" class="summary-grid compact"></div>
+          <div class="viz-layout">
+            <div class="viz-card">
+              <h3>当前药物对不同菌的影响强度</h3>
+              <div id="step1EffectBars" class="bars-card"></div>
+            </div>
+            <div class="viz-card">
+              <h3>面板摘要</h3>
+              <div id="step1PairDetails" class="detail-list"></div>
+            </div>
+          </div>
+          <div class="table-card">
+            <h3>All Microbe Effects</h3>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Microbe</th>
+                    <th>Label</th>
+                    <th>Inhibit Prob</th>
+                    <th>Effect Score</th>
+                  </tr>
+                </thead>
+                <tbody id="step1TableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel module-panel">
+          <div class="panel-head">
+            <span class="eyebrow step step-2">Step 2</span>
+            <h2>Microbe -> Drug Metabolism</h2>
+          </div>
+          <div id="step2PairStats" class="summary-grid compact"></div>
+          <div class="viz-layout">
+            <div class="viz-card">
+              <h3>当前药物在不同菌中的代谢概率</h3>
+              <div id="step2MetabolismBars" class="bars-card"></div>
+            </div>
+            <div class="viz-card">
+              <h3>面板摘要</h3>
+              <div id="step2PairDetails" class="detail-list"></div>
+            </div>
+          </div>
+          <div class="table-card">
+            <h3>All Microbe Metabolism Predictions</h3>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Microbe</th>
+                    <th>Label</th>
+                    <th>Metabolized Prob</th>
+                    <th>Depletion</th>
+                  </tr>
+                </thead>
+                <tbody id="step2TableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section class="panel step3-panel" id="step3Panel">
+        <div class="panel-head">
+          <span class="eyebrow step step-3">Step 3</span>
+          <h2>Community Simulation</h2>
+        </div>
+        <div id="step3Summary" class="summary-grid"></div>
+        <div class="subpanel">
+          <h3>评分拆解</h3>
+          <div id="step3ScoreBreakdown" class="detail-list score-breakdown"></div>
+        </div>
+        <div class="viz-layout step3-layout">
+          <div class="viz-card chart-card">
+            <div class="card-title-row">
+              <h3>动态轨迹</h3>
+              <span class="muted">Health / Parent Retention×100 / Development Score</span>
+            </div>
+            <canvas id="step3TrajectoryChart" height="320"></canvas>
+          </div>
+          <div class="viz-card">
+            <h3>场景对比</h3>
+            <div id="step3ScenarioGrid" class="scenario-grid"></div>
+          </div>
+        </div>
+        <div class="table-card">
+          <h3>Top Microbe Changes</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Microbe</th>
+                  <th>Initial</th>
+                  <th>Final</th>
+                  <th>Delta</th>
+                  <th>Fold Change</th>
+                </tr>
+              </thead>
+              <tbody id="step3TableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div class="toast" id="toast"></div>
+    <script src="/app.js"></script>
+  </body>
+</html>

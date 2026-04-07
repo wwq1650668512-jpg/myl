@@ -1,0 +1,180 @@
+from __future__ import annotations
+
+import argparse
+from pathlib import Path
+
+import pandas as pd
+
+
+ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_REFERENCE_PATH = ROOT / "data/processed/amr/microbe_amr_reference.csv"
+DEFAULT_RULES_PATH = ROOT / "data/processed/amr/drug_resistance_rules.csv"
+
+STRICT_ANAEROBE_GENERA = [
+    "Akkermansia",
+    "Bacteroides",
+    "Bilophila",
+    "Blautia",
+    "Clostridium",
+    "Collinsella",
+    "Coprococcus",
+    "Dorea",
+    "Eggerthella",
+    "Eubacterium",
+    "Fusobacterium",
+    "Odoribacter",
+    "Parabacteroides",
+    "Peptoclostridium",
+    "Prevotella",
+    "Roseburia",
+    "Ruminococcus",
+    "Veillonella",
+]
+
+LOW_ANAEROBE_FLUOROQUINOLONES = [
+    ("ciprofloxacin", "strong"),
+    ("levofloxacin", "strong"),
+    ("ofloxacin", "strong"),
+    ("norfloxacin", "strong"),
+]
+
+
+def _append_missing_rules(existing: pd.DataFrame, new_rows: list[dict[str, object]]) -> pd.DataFrame:
+    existing = existing.copy()
+    if "rule_id" not in existing.columns:
+        existing["rule_id"] = ""
+    existing_ids = set(existing["rule_id"].fillna("").astype(str))
+    rows_to_add = [row for row in new_rows if str(row["rule_id"]) not in existing_ids]
+    if not rows_to_add:
+        return existing
+    return pd.concat([existing, pd.DataFrame(rows_to_add)], ignore_index=True)
+
+
+def _rule_id(stem: str) -> str:
+    return "".join(character if character.isalnum() else "_" for character in stem.strip().lower()).strip("_")
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Seed polymyxin x gram-positive and low-anaerobe fluoroquinolone x strict-anaerobe rules.")
+    parser.add_argument("--reference-path", type=Path, default=DEFAULT_REFERENCE_PATH)
+    parser.add_argument("--rules-path", type=Path, default=DEFAULT_RULES_PATH)
+    args = parser.parse_args()
+
+    reference = pd.read_csv(args.reference_path, low_memory=False)
+    rules = pd.read_csv(args.rules_path, low_memory=False)
+
+    gram_positive_genera = sorted(
+        {
+            str(genus).strip()
+            for genus, gram_stain in zip(reference.get("genus", []), reference.get("gram_stain", []))
+            if str(genus).strip() and str(gram_stain).strip().lower() == "positive"
+        }
+    )
+
+    seeded_rules: list[dict[str, object]] = []
+
+    for genus in gram_positive_genera:
+        genus_key = _rule_id(genus)
+        seeded_rules.extend(
+            [
+                {
+                    "rule_id": f"amr_{genus_key}_colistin_strong",
+                    "drug_class": "colistin",
+                    "drug_name": "",
+                    "species_label": "",
+                    "genus": genus,
+                    "expected_phenotype": "resistant",
+                    "rule_level": "genus",
+                    "mechanism_hint": "polymyxins require gram-negative outer-membrane/LPS interaction and are expected to be inactive in gram-positive bacteria",
+                    "rule_strength": "strong",
+                    "source_name": "Polymyxin review (PMC5766840)",
+                    "source_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5766840/",
+                    "source_version": "accessed 2026-04-05",
+                    "notes": "Explicit colistin prior for gram-positive genera in the current panel.",
+                },
+                {
+                    "rule_id": f"amr_{genus_key}_polymyxin_b_strong",
+                    "drug_class": "polymyxin_b",
+                    "drug_name": "",
+                    "species_label": "",
+                    "genus": genus,
+                    "expected_phenotype": "resistant",
+                    "rule_level": "genus",
+                    "mechanism_hint": "polymyxins require gram-negative outer-membrane/LPS interaction and are expected to be inactive in gram-positive bacteria",
+                    "rule_strength": "strong",
+                    "source_name": "Polymyxin review (PMC5766840)",
+                    "source_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5766840/",
+                    "source_version": "accessed 2026-04-05",
+                    "notes": "Explicit polymyxin B prior for gram-positive genera in the current panel.",
+                },
+                {
+                    "rule_id": f"amr_{genus_key}_polymyxin_moderate",
+                    "drug_class": "polymyxin",
+                    "drug_name": "",
+                    "species_label": "",
+                    "genus": genus,
+                    "expected_phenotype": "resistant",
+                    "rule_level": "genus",
+                    "mechanism_hint": "polymyxins are expected to act on gram-negative outer membranes and not gram-positive cell envelopes",
+                    "rule_strength": "moderate",
+                    "source_name": "Polymyxin review (PMC5766840)",
+                    "source_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5766840/",
+                    "source_version": "accessed 2026-04-05",
+                    "notes": "Class-level prior for gram-positive genera in the current panel.",
+                },
+            ]
+        )
+
+    for genus in STRICT_ANAEROBE_GENERA:
+        genus_key = _rule_id(genus)
+        for drug_name, strength in LOW_ANAEROBE_FLUOROQUINOLONES:
+            seeded_rules.append(
+                {
+                    "rule_id": f"amr_{genus_key}_{_rule_id(drug_name)}_{strength}",
+                    "drug_class": drug_name,
+                    "drug_name": "",
+                    "species_label": "",
+                    "genus": genus,
+                    "expected_phenotype": "resistant",
+                    "rule_level": "genus",
+                    "mechanism_hint": "selected fluoroquinolones have limited anaerobe coverage compared with later respiratory fluoroquinolones",
+                    "rule_strength": strength,
+                    "source_name": "Fluoroquinolones and Anaerobes review",
+                    "source_url": "https://pubmed.ncbi.nlm.nih.gov/10428911/",
+                    "source_version": "accessed 2026-04-05",
+                    "notes": "Explicit low-anaerobe fluoroquinolone prior for strict anaerobe genera in the current panel.",
+                }
+            )
+        seeded_rules.append(
+            {
+                "rule_id": f"amr_{genus_key}_fluoroquinolone_low_anaerobe_moderate",
+                "drug_class": "fluoroquinolone_low_anaerobe",
+                "drug_name": "",
+                "species_label": "",
+                "genus": genus,
+                "expected_phenotype": "resistant",
+                "rule_level": "genus",
+                "mechanism_hint": "older fluoroquinolones have limited strict-anaerobe coverage; this rule intentionally excludes moxifloxacin-like agents",
+                "rule_strength": "moderate",
+                "source_name": "Fluoroquinolones and Anaerobes review",
+                "source_url": "https://pubmed.ncbi.nlm.nih.gov/10428911/",
+                "source_version": "accessed 2026-04-05",
+                "notes": "Use only for the low-anaerobe fluoroquinolone subgroup identified in the service layer.",
+            }
+        )
+
+    updated_rules = _append_missing_rules(rules, seeded_rules)
+    updated_rules.to_csv(args.rules_path, index=False)
+
+    print(
+        {
+            "rules_path": str(args.rules_path),
+            "n_gram_positive_genera_seeded": int(len(gram_positive_genera)),
+            "n_strict_anaerobe_genera_seeded": int(len(STRICT_ANAEROBE_GENERA)),
+            "n_rules_total": int(len(updated_rules)),
+        }
+    )
+
+
+if __name__ == "__main__":
+    main()
