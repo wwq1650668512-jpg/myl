@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import shlex
 import shutil
 import subprocess
@@ -75,32 +76,55 @@ SMILES_PRIORITY = [
 
 
 def _resolve_chemprop_bin(require_installed: bool = True) -> str:
-    """Locate the Chemprop CLI executable in the current environment."""
-    candidate_paths = []
+    """Locate the Chemprop CLI executable from env vars, current env, and common fallbacks."""
+    candidate_paths: list[Path] = []
+
+    explicit_bin = os.environ.get("CHEMPROP_BIN", "").strip() or os.environ.get("CHEMPROP_CLI", "").strip()
+    if explicit_bin:
+        candidate_paths.append(Path(explicit_bin).expanduser())
 
     # Prefer the CLI installed alongside the current Python interpreter so a
     # dedicated venv works even when PATH is not activated.
     candidate_paths.append(Path(sys.executable).parent / "chemprop")
+    candidate_paths.append(Path(sys.executable).parent / "chemprop.exe")
 
     # Some environments expose only the resolved interpreter path, so keep a
     # second candidate based on the symlink target parent as a fallback.
     try:
         candidate_paths.append(Path(sys.executable).resolve().parent / "chemprop")
+        candidate_paths.append(Path(sys.executable).resolve().parent / "chemprop.exe")
     except OSError:
         pass
 
+    # Common project-level / shared venv locations used in this repository.
+    project_root = Path(__file__).resolve().parents[3]
+    candidate_paths.extend(
+        [
+            project_root / ".venv" / "bin" / "chemprop",
+            project_root / ".venv" / "Scripts" / "chemprop.exe",
+            Path("/tmp/microbe_env/bin/chemprop"),
+        ]
+    )
+
     for candidate in candidate_paths:
-        if candidate.exists():
-            return str(candidate)
+        expanded = candidate.expanduser()
+        if expanded.is_file():
+            return str(expanded)
 
     chemprop_bin = shutil.which("chemprop")
     if chemprop_bin is not None:
         return chemprop_bin
+    chemprop_exe = shutil.which("chemprop.exe")
+    if chemprop_exe is not None:
+        return chemprop_exe
 
     if require_installed:
         raise RuntimeError(
-            "Chemprop CLI is not installed in the current environment. "
-            "Prepare data with prepare_step1_chemprop_inputs first, then install Chemprop in a dedicated environment."
+            "Chemprop CLI 未在当前环境中找到。"
+            "可通过以下方式修复："
+            "1) 使用已有环境启动网页：`PYTHONPATH=src /tmp/microbe_env/bin/python scripts/run_web_app.py`；"
+            "2) 或在当前环境安装：`python -m pip install -r requirements-step1-chemprop.txt`；"
+            "3) 或设置环境变量 `CHEMPROP_BIN=/path/to/chemprop` 指定可执行文件。"
         )
     return "chemprop"
 

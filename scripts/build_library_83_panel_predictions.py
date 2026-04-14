@@ -15,6 +15,8 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from gut_drug_microbiome.step1 import predict_step1_hybrid
+from gut_drug_microbiome.step1 import annotate_compound_semantics
+from gut_drug_microbiome.step1 import refine_step1_promote_with_step2
 from gut_drug_microbiome.step2 import build_step2_input_tables
 from gut_drug_microbiome.step2 import predict_step2_baseline
 
@@ -26,10 +28,19 @@ DEFAULT_STEP1_CHEMPROP_PREPARE_DIR = ROOT / "data/processed/step1/chemprop_scaff
 DEFAULT_STEP1_CHEMPROP_MODEL_PATH = ROOT / "models/step1/chemprop_scaffold_classification_v1/model_0/best.pt"
 DEFAULT_STEP1_REGRESSOR_PATH = ROOT / "models/step1/gold_scaffold_split_rdkit_40/regressor.joblib"
 DEFAULT_STEP1_REGRESSOR_METRICS_PATH = ROOT / "models/step1/gold_scaffold_split_rdkit_40/metrics.json"
+DEFAULT_STEP1_PROMOTE_CLASSIFIER_PATH = (
+    ROOT / "models/step1/promote_aux_scaffold_mdipid_plus_promote_literature_v2_40/promote_classifier.joblib"
+)
+DEFAULT_STEP1_PROMOTE_METRICS_PATH = (
+    ROOT / "models/step1/promote_aux_scaffold_mdipid_plus_promote_literature_v2_40/metrics.json"
+)
+DEFAULT_CROSS_FEEDING_REFERENCE_PATH = ROOT / "data/reference/cross_feeding_edges.csv"
 DEFAULT_STEP2_CLASSIFIER_PATH = ROOT / "models/step2/zimmermann_scaffold_split/classifier_full.joblib"
 DEFAULT_STEP2_REGRESSOR_PATH = ROOT / "models/step2/zimmermann_scaffold_split/regressor_full.joblib"
 DEFAULT_STEP2_METRICS_PATH = ROOT / "models/step2/zimmermann_scaffold_split/metrics.json"
 DEFAULT_STEP2_APPLICABILITY_REFERENCE_PATH = ROOT / "models/step2/zimmermann_scaffold_split/applicability_reference.joblib"
+DEFAULT_ENZYME_MICROBE_PANEL_PATH = ROOT / "data/reference/step2_microbe_enzyme_prior_long.csv"
+DEFAULT_ENZYME_FUNCTION_CATALOG_PATH = ROOT / "data/reference/step2_enzyme_function_catalog.csv"
 
 DRUG_COLUMNS = [
     "prestwick_id",
@@ -129,6 +140,7 @@ def build_library_pair_table(source_predictions_path: Path, microbe_table_path: 
             unique_drug_columns.append(column)
 
     drug_table = source.loc[:, unique_drug_columns].drop_duplicates(subset=["prestwick_id"]).reset_index(drop=True)
+    drug_table = annotate_compound_semantics(drug_table)
     microbe_table = pd.read_csv(microbe_table_path, low_memory=False)
     existing_microbe_columns = [column for column in MICROBE_COLUMNS if column in microbe_table.columns]
     microbe_table = microbe_table.loc[:, existing_microbe_columns].drop_duplicates(subset=["nt_code"]).reset_index(drop=True)
@@ -190,6 +202,24 @@ def main() -> None:
         help="Metrics JSON for the Step 1 regressor.",
     )
     parser.add_argument(
+        "--step1-promote-classifier-path",
+        default=DEFAULT_STEP1_PROMOTE_CLASSIFIER_PATH,
+        type=Path,
+        help="Optional Step 1 promote auxiliary classifier used during Step 2-aware rescoring.",
+    )
+    parser.add_argument(
+        "--step1-promote-metrics-path",
+        default=DEFAULT_STEP1_PROMOTE_METRICS_PATH,
+        type=Path,
+        help="Metrics JSON for the optional Step 1 promote auxiliary classifier.",
+    )
+    parser.add_argument(
+        "--cross-feeding-reference-path",
+        default=DEFAULT_CROSS_FEEDING_REFERENCE_PATH,
+        type=Path,
+        help="Curated cross-feeding reference table used for conservative promote rescoring.",
+    )
+    parser.add_argument(
         "--step2-classifier-path",
         default=DEFAULT_STEP2_CLASSIFIER_PATH,
         type=Path,
@@ -212,6 +242,18 @@ def main() -> None:
         default=DEFAULT_STEP2_APPLICABILITY_REFERENCE_PATH,
         type=Path,
         help="Applicability reference for Step 2 baseline inference.",
+    )
+    parser.add_argument(
+        "--enzyme-microbe-panel-path",
+        default=DEFAULT_ENZYME_MICROBE_PANEL_PATH,
+        type=Path,
+        help="Optional curated microbe-enzyme prior table for the expanded panel.",
+    )
+    parser.add_argument(
+        "--enzyme-function-catalog-path",
+        default=DEFAULT_ENZYME_FUNCTION_CATALOG_PATH,
+        type=Path,
+        help="Optional enzyme function catalog used for enzyme-derived support.",
     )
     args = parser.parse_args()
 
@@ -250,9 +292,18 @@ def main() -> None:
         regressor_path=args.step2_regressor_path,
         metrics_path=args.step2_metrics_path,
         applicability_reference_path=args.step2_applicability_reference_path,
+        enzyme_microbe_panel_path=args.enzyme_microbe_panel_path,
+        enzyme_function_catalog_path=args.enzyme_function_catalog_path,
     )
 
     predictions = pd.read_csv(output_dir / "predictions.csv", low_memory=False)
+    predictions = refine_step1_promote_with_step2(
+        predictions,
+        promote_classifier_path=args.step1_promote_classifier_path,
+        promote_metrics_path=args.step1_promote_metrics_path,
+        cross_feeding_reference_path=args.cross_feeding_reference_path,
+    )
+    predictions.to_csv(output_dir / "predictions.csv", index=False)
     summary = {
         "source_predictions": str(args.source_predictions),
         "microbe_table": str(args.microbe_table),

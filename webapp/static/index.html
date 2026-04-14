@@ -69,6 +69,14 @@
           </label>
 
           <label class="field">
+            <span>疾病背景（可选）</span>
+            <select id="diseaseSelect"></select>
+            <div class="field-help" id="diseaseHint">
+              选择后会优先按疾病知识字典生成 Step 3 初始群落，并辅助解释当前药物可能对应的疾病方向。
+            </div>
+          </label>
+
+          <label class="field">
             <span>真实 cohort 预设</span>
             <select id="communityTableSelect"></select>
             <div class="field-help">选择后会用真实 `community_table.csv` 初始化群落，并覆盖内置场景。</div>
@@ -160,6 +168,14 @@
         </details>
 
         <div class="inline-meta" id="selectedDrugMeta"></div>
+        <div class="subpanel">
+          <h3>机制解释卡片</h3>
+          <div id="mechanismExplainCard" class="detail-list"></div>
+        </div>
+        <div class="subpanel">
+          <h3>潜在疾病效果</h3>
+          <div id="diseaseExplainCard" class="detail-list"></div>
+        </div>
       </section>
 
       <section class="panel demo-panel">
@@ -193,13 +209,15 @@
           </div>
           <div class="table-card">
             <h3>All Microbe Effects</h3>
-            <div class="table-wrap">
+            <p class="table-hint">主表按菌名聚合展示（同名菌株已合并）；额外机制证据与 NT code 可在每行“查看证据”中展开。</p>
+            <div class="table-wrap table-wrap-scroll">
               <table>
                 <thead>
                   <tr>
                     <th>Microbe</th>
                     <th>Label</th>
                     <th>Inhibit Prob</th>
+                    <th>Refined Promote Prob</th>
                     <th>Effect Score</th>
                   </tr>
                 </thead>
@@ -227,7 +245,8 @@
           </div>
           <div class="table-card">
             <h3>All Microbe Metabolism Predictions</h3>
-            <div class="table-wrap">
+            <p class="table-hint">主表按菌名聚合展示（同名菌株已合并）；反应类/酶先验/基因证据与 NT code 可按行展开。</p>
+            <div class="table-wrap table-wrap-scroll">
               <table>
                 <thead>
                   <tr>
@@ -287,7 +306,7 @@
       </section>
     </main>
 
-    <div class="toast" id="toast"></div>
+    <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
     <script src="/app.js"></script>
   </body>
 </html>

@@ -248,6 +248,9 @@ python scripts/train_step1_baseline.py \
 - 默认组合：
   - 分类：`models/step1/chemprop_scaffold_classification_v1/model_0/best.pt`
   - 回归：`models/step1/gold_scaffold_split_rdkit_40/regressor.joblib`
+- 当前 hybrid 推理末端已增加 drug-profile-aware 现实性约束：
+  - `eubiotic_modulator`：限制核心产丁酸菌被强抑制
+  - `host_pathway_agent`：全局弱化直接微生物效应并默认偏向 `no_effect`
 - 默认输出：
   - [predictions.csv](../predictions/step1/hybrid_scaffold_v1/predictions.csv)
   - [predictions_slim.csv](../predictions/step1/hybrid_scaffold_v1/predictions_slim.csv)

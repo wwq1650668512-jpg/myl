@@ -27,8 +27,8 @@ step1:
       effect_score_lte: -0.20
       significance_q_value_lt: 0.05
     promote:
-      effect_score_gte: 0.20
-      significance_q_value_lt: 0.05
+      effect_score_gte: 0.12
+      significance_q_value_lt: 0.30
     no_effect:
       absolute_effect_score_lt: 0.20
   modeling_notes:

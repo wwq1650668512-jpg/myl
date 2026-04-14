@@ -56,6 +56,19 @@ class GutPredictionRequestHandler(SimpleHTTPRequestHandler):
             raise ValueError(f"缺少参数: {key}")
         return values[0].strip()
 
+    def _optional_text(self, payload: dict[str, object], key: str, default: str | None = None) -> str | None:
+        if key not in payload:
+            return default
+        value = payload.get(key)
+        if value is None:
+            return default
+        text = str(value).strip()
+        if not text:
+            return default
+        if text.lower() in {"none", "null", "undefined"}:
+            return default
+        return text
+
     def do_GET(self) -> None:  # noqa: N802
         parsed = urlparse(self.path)
         if parsed.path.startswith("/api/"):
@@ -110,12 +123,12 @@ class GutPredictionRequestHandler(SimpleHTTPRequestHandler):
                 self._write_json(
                     HTTPStatus.OK,
                     self.server.service.predict_custom_drug(
-                        drug_name=str(payload.get("drug_name", "")).strip() or None,
-                        smiles=str(payload.get("smiles", "")).strip(),
-                        microbe_query=str(payload.get("microbe", "")).strip() or None,
-                        therapeutic_class=str(payload.get("therapeutic_class", "")).strip() or None,
-                        therapeutic_effect=str(payload.get("therapeutic_effect", "")).strip() or None,
-                        target_species=str(payload.get("target_species", "human")).strip() or "human",
+                        drug_name=self._optional_text(payload, "drug_name"),
+                        smiles=self._optional_text(payload, "smiles", default="") or "",
+                        microbe_query=self._optional_text(payload, "microbe"),
+                        therapeutic_class=self._optional_text(payload, "therapeutic_class"),
+                        therapeutic_effect=self._optional_text(payload, "therapeutic_effect"),
+                        target_species=self._optional_text(payload, "target_species", default="human") or "human",
                         human_use=bool(payload.get("human_use", True)),
                         veterinary=bool(payload.get("veterinary", False)),
                     ),
@@ -126,9 +139,11 @@ class GutPredictionRequestHandler(SimpleHTTPRequestHandler):
                 self._write_json(
                     HTTPStatus.OK,
                     self.server.service.simulate_step3(
-                        drug_query=str(payload.get("drug", "")).strip(),
-                        scenario_name=str(payload.get("scenario", "healthy_reference")).strip(),
-                        community_table_path=str(payload.get("community_table_path", "")).strip() or None,
+                        drug_query=self._optional_text(payload, "drug", default="") or "",
+                        scenario_name=self._optional_text(payload, "scenario", default="healthy_reference")
+                        or "healthy_reference",
+                        community_table_path=self._optional_text(payload, "community_table_path"),
+                        disease_name=self._optional_text(payload, "disease_name"),
                         n_steps=int(payload.get("n_steps", 14)),
                         initial_dose=float(payload.get("initial_dose", 1.0)),
                         repeat_dose=float(payload.get("repeat_dose", 1.0)),
@@ -143,13 +158,15 @@ class GutPredictionRequestHandler(SimpleHTTPRequestHandler):
                 return
 
             if parsed.path == "/api/custom-drug/step3/simulate":
-                session_id = str(payload.get("session_id", "")).strip()
+                session_id = self._optional_text(payload, "session_id", default="") or ""
                 self._write_json(
                     HTTPStatus.OK,
                     self.server.service.simulate_custom_step3(
                         session_id=session_id,
-                        scenario_name=str(payload.get("scenario", "healthy_reference")).strip(),
-                        community_table_path=str(payload.get("community_table_path", "")).strip() or None,
+                        scenario_name=self._optional_text(payload, "scenario", default="healthy_reference")
+                        or "healthy_reference",
+                        community_table_path=self._optional_text(payload, "community_table_path"),
+                        disease_name=self._optional_text(payload, "disease_name"),
                         n_steps=int(payload.get("n_steps", 14)),
                         initial_dose=float(payload.get("initial_dose", 1.0)),
                         repeat_dose=float(payload.get("repeat_dose", 1.0)),
@@ -167,8 +184,9 @@ class GutPredictionRequestHandler(SimpleHTTPRequestHandler):
                 self._write_json(
                     HTTPStatus.OK,
                     self.server.service.scenario_grid_step3(
-                        drug_query=str(payload.get("drug", "")).strip(),
-                        community_table_path=str(payload.get("community_table_path", "")).strip() or None,
+                        drug_query=self._optional_text(payload, "drug", default="") or "",
+                        community_table_path=self._optional_text(payload, "community_table_path"),
+                        disease_name=self._optional_text(payload, "disease_name"),
                         n_steps=int(payload.get("n_steps", 14)),
                         initial_dose=float(payload.get("initial_dose", 1.0)),
                         repeat_dose=float(payload.get("repeat_dose", 1.0)),
@@ -183,12 +201,13 @@ class GutPredictionRequestHandler(SimpleHTTPRequestHandler):
                 return
 
             if parsed.path == "/api/custom-drug/step3/scenario-grid":
-                session_id = str(payload.get("session_id", "")).strip()
+                session_id = self._optional_text(payload, "session_id", default="") or ""
                 self._write_json(
                     HTTPStatus.OK,
                     self.server.service.scenario_grid_custom_step3(
                         session_id=session_id,
-                        community_table_path=str(payload.get("community_table_path", "")).strip() or None,
+                        community_table_path=self._optional_text(payload, "community_table_path"),
+                        disease_name=self._optional_text(payload, "disease_name"),
                         n_steps=int(payload.get("n_steps", 14)),
                         initial_dose=float(payload.get("initial_dose", 1.0)),
                         repeat_dose=float(payload.get("repeat_dose", 1.0)),

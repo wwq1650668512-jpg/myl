@@ -48,6 +48,12 @@ def main() -> None:
         help="Optional weak-supervision table to append to classifier training only.",
     )
     parser.add_argument(
+        "--promote-feature-table",
+        default=None,
+        type=Path,
+        help="Optional Step 2-derived feature table joined only for the promote auxiliary head.",
+    )
+    parser.add_argument(
         "--split-mode",
         choices=["random", "drug", "scaffold", "microbe"],
         default="drug",
@@ -91,6 +97,11 @@ def main() -> None:
         help="Fallback sample weight applied to silver rows not explicitly covered by --source-weight.",
     )
     parser.add_argument(
+        "--enable-promote-head",
+        action="store_true",
+        help="Train an auxiliary promote-vs-not-promote head, optionally using --promote-feature-table.",
+    )
+    parser.add_argument(
         "--verbose",
         type=int,
         default=1,
@@ -103,6 +114,7 @@ def main() -> None:
         modeling_table_path=args.modeling_table,
         output_dir=args.output_dir,
         silver_table_path=args.silver_table,
+        promote_feature_table_path=args.promote_feature_table,
         split_mode=args.split_mode,
         random_state=args.random_state,
         test_size=args.test_size,
@@ -110,6 +122,7 @@ def main() -> None:
         source_weight_map=source_weight_map,
         default_gold_weight=args.default_gold_weight,
         default_silver_weight=args.default_silver_weight,
+        enable_promote_head=args.enable_promote_head,
         verbose=args.verbose,
     )
     print(json.dumps(summary, indent=2, ensure_ascii=False))

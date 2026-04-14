@@ -16,6 +16,10 @@ from .chemprop_scaffold import _prepare_descriptor_frame
 from .chemprop_scaffold import _resolve_chemprop_bin
 from .train_baseline import _prepare_feature_frame
 
+STEP1_PROFILE_EUBIOTIC = "eubiotic_modulator"
+STEP1_PROFILE_HOST = "host_pathway_agent"
+
+
 def _pick_first_series(frame: pd.DataFrame, candidates: list[str], default_value: object = np.nan) -> pd.Series:
     """Return the first existing candidate column or a default-filled fallback series."""
     for candidate in candidates:
@@ -509,6 +513,118 @@ def _hybrid_effect_label(
             return "promote"
     return "no_effect"
 
+
+def _infer_step1_drug_profile_series(frame: pd.DataFrame) -> pd.Series:
+    """Infer lightweight drug profile tags used by Step1 realism constraints."""
+    name_text = _pick_first_series(frame, ["chemical_name"], default_value="").fillna("").astype(str)
+    class_text = _pick_first_series(frame, ["therapeutic_class"], default_value="").fillna("").astype(str)
+    effect_text = _pick_first_series(frame, ["therapeutic_effect"], default_value="").fillna("").astype(str)
+    semantic_family = _pick_first_series(frame, ["compound_semantic_family"], default_value="").fillna("").astype(str)
+    merged = (name_text + " " + class_text + " " + effect_text + " " + semantic_family).map(_normalize_lookup_value)
+
+    profile = pd.Series("unknown", index=frame.index, dtype=object)
+    eubiotic_mask = merged.str.contains("rifaximin", regex=False)
+    host_mask = (
+        merged.str.contains("lubiprostone", regex=False)
+        | merged.str.contains("secretagogue", regex=False)
+        | merged.str.contains("chloridechannelactivator", regex=False)
+    )
+    profile.loc[eubiotic_mask] = STEP1_PROFILE_EUBIOTIC
+    profile.loc[host_mask] = STEP1_PROFILE_HOST
+    return profile
+
+
+def _core_butyrate_mask(frame: pd.DataFrame) -> pd.Series:
+    """Identify core butyrate-producer taxa for Rifaximin constraint checks."""
+    species = _pick_first_series(frame, ["species_label", "microbe_label", "species_name"], default_value="").fillna("").astype(str)
+    genus = _pick_first_series(frame, ["genus"], default_value="").fillna("").astype(str)
+    species_key = species.map(_normalize_lookup_value)
+    genus_key = genus.map(_normalize_lookup_value)
+    return (
+        species_key.str.contains("faecalibacteriumprausnitzii", regex=False)
+        | species_key.str.contains("eubacteriumrectale", regex=False)
+        | genus_key.str.contains("roseburia", regex=False)
+    )
+
+
+def _apply_step1_drug_profile_constraints(
+    predictions: pd.DataFrame,
+    inhibit_probability_threshold: float,
+    promote_score_threshold: float,
+) -> tuple[pd.DataFrame, dict[str, int]]:
+    """Apply profile-aware realism constraints before exporting final Step1 effect calls."""
+    result = predictions.copy()
+    inhibit_prob = pd.to_numeric(result["predicted_inhibit_probability"], errors="coerce")
+    effect_score = pd.to_numeric(result["predicted_effect_score"], errors="coerce")
+    profile = _infer_step1_drug_profile_series(result)
+    result["step1_drug_profile"] = profile
+    result["step1_constraint_applied"] = False
+    result["step1_constraint_reason"] = "none"
+
+    summary = {
+        "eubiotic_core_rows_adjusted": 0,
+        "host_rows_adjusted": 0,
+        "host_high_evidence_rows_retained": 0,
+    }
+
+    # Constraint 1: eubiotic_modulator should not indiscriminately strongly inhibit core butyrate producers.
+    core_mask = _core_butyrate_mask(result)
+    eubiotic_mask = profile.eq(STEP1_PROFILE_EUBIOTIC)
+    strong_inhibit_mask = (inhibit_prob.fillna(0.0) >= 0.65) | effect_score.fillna(0.0).lt(-0.06)
+    adjust_eubiotic = eubiotic_mask & core_mask & strong_inhibit_mask
+    if adjust_eubiotic.any():
+        summary["eubiotic_core_rows_adjusted"] = int(adjust_eubiotic.sum())
+        inhibit_prob.loc[adjust_eubiotic] = inhibit_prob.loc[adjust_eubiotic].clip(upper=min(0.45, inhibit_probability_threshold - 0.01))
+        effect_score.loc[adjust_eubiotic] = effect_score.loc[adjust_eubiotic].clip(lower=-0.02)
+        result.loc[adjust_eubiotic, "step1_constraint_applied"] = True
+        result.loc[adjust_eubiotic, "step1_constraint_reason"] = "eubiotic_core_butyrate_inhibit_clipped"
+
+    # Constraint 2: host_pathway_agent defaults to weak direct microbe effects; keep only high-confidence tails.
+    host_mask = profile.eq(STEP1_PROFILE_HOST)
+    if host_mask.any():
+        host_prob = inhibit_prob.loc[host_mask].fillna(0.0)
+        host_score = effect_score.loc[host_mask].fillna(0.0)
+        high_evidence = (host_prob >= 0.88) | host_score.abs().ge(0.28)
+        keep_high = host_mask.copy()
+        keep_high.loc[host_mask] = high_evidence.values
+        soften_mask = host_mask & ~keep_high
+
+        # Global downscale for host-pathway agents.
+        inhibit_prob.loc[host_mask] = (inhibit_prob.loc[host_mask].fillna(0.0) * 0.35).clip(0.0, 1.0)
+        effect_score.loc[host_mask] = effect_score.loc[host_mask].fillna(0.0) * 0.30
+
+        # Default to no_effect unless high-evidence tail is retained.
+        if soften_mask.any():
+            inhibit_prob.loc[soften_mask] = inhibit_prob.loc[soften_mask].clip(upper=max(0.0, inhibit_probability_threshold - 0.01))
+            effect_score.loc[soften_mask] = effect_score.loc[soften_mask].clip(lower=-0.08, upper=0.08)
+            result.loc[soften_mask, "step1_constraint_applied"] = True
+            result.loc[soften_mask, "step1_constraint_reason"] = "host_pathway_global_soften_to_no_effect"
+        if keep_high.any():
+            result.loc[keep_high, "step1_constraint_applied"] = True
+            result.loc[keep_high, "step1_constraint_reason"] = "host_pathway_high_evidence_retained"
+
+        summary["host_rows_adjusted"] = int(host_mask.sum())
+        summary["host_high_evidence_rows_retained"] = int(keep_high.sum())
+
+    result["predicted_inhibit_probability"] = inhibit_prob
+    result["predicted_effect_score"] = effect_score
+    result["predicted_binary_effect_label"] = np.where(
+        result["predicted_inhibit_probability"].fillna(0.0) >= inhibit_probability_threshold,
+        "inhibit",
+        "no_effect",
+    )
+    result["predicted_effect_label_hybrid"] = [
+        _hybrid_effect_label(
+            inhibit_probability=float(inhibit_probability) if pd.notna(inhibit_probability) else None,
+            effect_score=float(score) if pd.notna(score) else None,
+            inhibit_probability_threshold=inhibit_probability_threshold,
+            promote_score_threshold=promote_score_threshold,
+        )
+        for inhibit_probability, score in zip(result["predicted_inhibit_probability"], result["predicted_effect_score"])
+    ]
+    result["predicted_effect_magnitude"] = pd.to_numeric(result["predicted_effect_score"], errors="coerce").abs()
+    return result, summary
+
 # _predict_chemprop_inhibit_probability：使用Chemprop分类器对输入数据进行预测，返回每行的抑制概率。它首先准备输入数据，包括选择合适的SMILES列、处理缺失值、计算化学描述符等，然后调用Chemprop的命令行接口进行预测，并将结果与输入数据合并返回。
 def _predict_chemprop_inhibit_probability(
     frame: pd.DataFrame,
@@ -706,6 +822,11 @@ def predict_step1_hybrid(
         )
     ]
     predictions["predicted_effect_magnitude"] = predictions["predicted_effect_score"].abs()
+    predictions, constraint_summary = _apply_step1_drug_profile_constraints(
+        predictions,
+        inhibit_probability_threshold=float(inhibit_probability_threshold),
+        promote_score_threshold=float(promote_score_threshold),
+    )
 
     predictions_output = predictions.drop(columns=["hybrid_row_id"])
     predictions_output_path = output_dir / "predictions.csv"
@@ -749,6 +870,11 @@ def predict_step1_hybrid(
             str(key): int(value)
             for key, value in predictions_output["predicted_effect_label_hybrid"].value_counts().to_dict().items()
         },
+        "step1_drug_profile_counts": {
+            str(key): int(value)
+            for key, value in predictions_output.get("step1_drug_profile", pd.Series(dtype=object)).value_counts().to_dict().items()
+        },
+        "step1_constraint_summary": constraint_summary,
         "predictions_path": str(predictions_output_path),
         "predictions_slim_path": str(predictions_slim_path),
     }

@@ -16,6 +16,7 @@ import pandas as pd
 import yaml
 
 from .chem_features import enrich_drug_table_with_rdkit
+from gut_drug_microbiome.utils.chem import compute_smiles_descriptors as _compute_smiles_descriptors
 
 # 列名标准化函数，将原始列标签转换为稳定的snake_case字段名，去除特殊字符，统一大小写，并处理空值
 def _snake_case(text: str) -> str:
@@ -48,8 +49,8 @@ def _read_label_thresholds(config_path: Path) -> dict[str, float]:
     return {
         "inhibit_threshold": abs(float(step1["inhibit"]["effect_score_lte"])),
         "promote_threshold": float(step1["promote"]["effect_score_gte"]),
-        "q_threshold": float(step1["inhibit"]["significance_q_value_lt"]),
-        # 这里假设inhibit和promote的q_threshold（显著性阈值）相同，如果不同可以分别读取
+        "inhibit_q_threshold": float(step1["inhibit"]["significance_q_value_lt"]),
+        "promote_q_threshold": float(step1["promote"]["significance_q_value_lt"]),
     }
 
 # 下面是一些用于数据聚合和特征计算的辅助函数：
@@ -83,49 +84,6 @@ def _safe_log10(series: pd.Series) -> pd.Series:
     """Compute -log10 safely by clipping tiny values away from zero first."""
     clipped = series.clip(lower=1e-300)
     return -np.log10(clipped)
-
-# _count_smiles_feature：在一个SMILES字符串中计数特定的结构标记（如环索引、分支符号等），如果输入不是有效字符串则返回NaN
-def _count_smiles_feature(smiles: str | float, token: str) -> float:
-    """Count a structural token inside a SMILES string and return NaN for missing values."""
-    if not isinstance(smiles, str) or not smiles:
-        return math.nan
-    return float(smiles.count(token))
-
-# _compute_smiles_descriptors：基于SMILES字符串计算一些简单的文本特征，如长度、大写字母数量、环索引数量、分支符号数量等，这些特征可以作为药物化学性质的轻量级补充   
-def _compute_smiles_descriptors(frame: pd.DataFrame) -> pd.DataFrame:
-    """Add lightweight text-derived SMILES descriptors to a drug feature table."""
-    smiles = frame["main_component_smiles"].fillna(frame.get("smiles"))
-    result = frame.copy()
-    # smiles_length：SMILES字符串的长度，作为一个简单的复杂度指标
-    result["smiles_length"] = smiles.apply(lambda value: float(len(value)) if isinstance(value, str) else math.nan)
-    # smiles_uppercase_count：SMILES字符串中大写字母的数量，可能与原子类型和分子结构相关
-    result["smiles_uppercase_count"] = smiles.apply(
-        lambda value: float(sum(1 for char in value if char.isalpha() and char.isupper()))
-        if isinstance(value, str)
-        else math.nan
-    )
-    # smiles_ring_index_count：SMILES字符串中数字字符的数量，通常表示环结构的索引数量，可以反映分子的环状复杂度
-    result["smiles_ring_index_count"] = smiles.apply(
-        lambda value: float(sum(1 for char in value if char.isdigit()))
-        if isinstance(value, str)
-        else math.nan
-    )
-    # smiles_branch_count：SMILES字符串中左括号的数量，通常表示分子中的分支结构，可以反映分子的分支复杂度
-    result["smiles_branch_count"] = smiles.apply(lambda value: _count_smiles_feature(value, "("))
-    # smiles_double_bond_count：SMILES字符串中等号的数量，通常表示分子中的双键数量，可以反映分子的饱和度和反应性
-    result["smiles_double_bond_count"] = smiles.apply(lambda value: _count_smiles_feature(value, "="))
-    # smiles_halogen_count：SMILES字符串中卤素元素（Cl、Br、F、I）的总数量，通常表示分子中的卤素取代基数量，可以反映分子的极性和生物活性
-    result["smiles_halogen_count"] = smiles.apply(
-        lambda value: (
-            _count_smiles_feature(value, "Cl")
-            + _count_smiles_feature(value, "Br")
-            + _count_smiles_feature(value, "F")
-            + _count_smiles_feature(value, "I")
-        )
-        if isinstance(value, str)
-        else math.nan
-    )
-    return result
 
 # _load_supplementary_drug_metadata：从Maier 2018的补充表格中读取药物元数据，并标准化关键列名以便后续合并和分析
 def _load_supplementary_drug_metadata(raw_dir: Path) -> pd.DataFrame:
@@ -287,7 +245,8 @@ def _load_microbe_table(raw_dir: Path) -> pd.DataFrame:
 # _label_effects：根据预设的阈值将实验统计结果转换为连续的效果分数和离散的Step 1标签，计算效果分数、显著性标记、候选促进标签等，并生成最终的标签字段
 def _label_effects(frame: pd.DataFrame, thresholds: dict[str, float]) -> pd.DataFrame:
     """Convert assay statistics into continuous effect scores and discrete Step 1 labels."""
-    q_threshold = thresholds["q_threshold"]
+    inhibit_q_threshold = thresholds["inhibit_q_threshold"]
+    promote_q_threshold = thresholds["promote_q_threshold"]
     inhibit_threshold = thresholds["inhibit_threshold"]
     promote_threshold = thresholds["promote_threshold"]
 
@@ -300,14 +259,16 @@ def _label_effects(frame: pd.DataFrame, thresholds: dict[str, float]) -> pd.Data
     labeled["effect_score_pct"] = labeled["effect_score"] * 100.0
     # neg_log10_q：基于FDR校正后的p值计算的-log10值，作为一个连续的显著性指标，数值越大表示结果越显著，通常用于可视化和筛选显著互作
     labeled["neg_log10_q"] = _safe_log10(labeled["pv_comb_fdr_bh"])
-    # is_significant：一个布尔字段，表示该互作是否在统计上显著（即FDR校正后的p值小于预设的q_threshold），用于后续的标签分类和筛选
-    labeled["is_significant"] = labeled["pv_comb_fdr_bh"] < q_threshold
+    # is_significant_inhibit / is_significant_promote：分别记录抑制和促进任务的显著性门槛，允许正负方向使用不同q阈值
+    labeled["is_significant_inhibit"] = labeled["pv_comb_fdr_bh"] < inhibit_q_threshold
+    labeled["is_significant_promote"] = labeled["pv_comb_fdr_bh"] < promote_q_threshold
+    labeled["is_significant"] = labeled["is_significant_inhibit"] | labeled["is_significant_promote"]
     # candidate_promote_no_fdr：一个布尔字段，表示该互作是否具有促进效果且不考虑FDR校正的显著性（即effect_score大于等于promote_threshold），作为一个宽松的候选促进标签，可能包含一些假阳性但有助于捕获潜在的促进互作
     labeled["candidate_promote_no_fdr"] = labeled["effect_score"] >= promote_threshold
 
     labels = np.full(len(labeled), "no_effect", dtype=object)
-    inhibit_mask = labeled["is_significant"] & (labeled["effect_score"] <= -inhibit_threshold)
-    promote_mask = labeled["is_significant"] & (labeled["effect_score"] >= promote_threshold)
+    inhibit_mask = labeled["is_significant_inhibit"] & (labeled["effect_score"] <= -inhibit_threshold)
+    promote_mask = labeled["is_significant_promote"] & (labeled["effect_score"] >= promote_threshold)
     labels[inhibit_mask] = "inhibit"
     labels[promote_mask] = "promote"
     labeled["effect_label"] = labels

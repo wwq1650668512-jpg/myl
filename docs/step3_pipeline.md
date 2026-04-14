@@ -57,11 +57,12 @@ Step 3 当前直接消费集成后的 Step 2 预测表：
   - 当前是 `aggregate metabolite pool`
   - 还不是精确产物级模拟
 - 健康指数：
-  - 当前是 `GMWI2-like heuristic`
-  - 由 diversity、beneficial genera、risk genera、stability 组合得到
+  - 当前是 `interaction-aware heuristic`
+  - 保留 `diversity、beneficial genera、risk genera、stability`
+  - 同时新增一个受文献启发的 `ENBI-like interaction balance` 层，用 `positive vs negative interactions` 评估群落是更接近竞争主导还是交叉喂养主导
 - 开发评分：
   - 当前会同时保留 `legacy score`
-  - 新版综合分会把 `母药保留`、`群落保真度`、`dysbiosis penalty`、`uncertainty penalty`、`metabolite burden` 一起纳入
+  - 新版综合分会把 `母药保留`、`群落保真度`、`dysbiosis penalty`、`interaction dysbiosis penalty`、`uncertainty penalty`、`metabolite burden` 一起纳入
   - 当前仍用于项目内部排序，不应解释成临床药效
 
 ## 当前内置场景
@@ -175,6 +176,20 @@ Step 3 当前直接消费集成后的 Step 2 预测表：
 - 精确产物级、代谢物级药效增减；
 - 真实 GMWI2 终值；
 - 临床层面的“值不值得开发新药”。
+
+## 最近升级
+
+- 新增 `interaction-aware dynamics`
+  - 会基于 `cross_feeding_edges.csv`、`compound_semantic_family`、Step 2 酶先验、代谢概率等信号，构建一个轻量的正负交互网络
+  - 在每个时间步输出：
+    - `positive_interaction_strength`
+    - `negative_interaction_strength`
+    - `interaction_balance_rho`
+    - `interaction_balance_shift`
+- 这个 `interaction_balance_rho` 不是原论文的全文复现，而是按同样思想实现的 `ENBI-like proxy`
+  - `rho < 0` 更接近竞争主导
+  - `rho > 0` 更接近交叉喂养主导
+  - `shift > 0` 表示相对起始状态更往 dysbiosis-like 的合作网络偏移
 
 ## 下一步
 

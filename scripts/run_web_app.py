@@ -54,7 +54,6 @@ def main() -> None:
         help="Static asset directory for the local webpage.",
     )
     args = parser.parse_args()
-
     demo_ranking = args.demo_ranking if args.demo_ranking.exists() else None
     serve_web_app(
         host=args.host,

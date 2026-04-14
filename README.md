@@ -73,6 +73,42 @@
 
 ## Step 1 快速开始
 
+## 环境与命令
+
+仓库现在以 `pyproject.toml` 作为统一的工程入口，建议在虚拟环境中安装：
+
+```bash
+python -m pip install -e .
+```
+
+如果需要测试工具：
+
+```bash
+python -m pip install -e ".[dev]"
+```
+
+如果需要 Chemprop 相关能力：
+
+```bash
+python -m pip install -e ".[chemprop]"
+```
+
+统一 CLI 入口：
+
+```bash
+gut-drug-microbiome step1 normalize
+gut-drug-microbiome step1 train-baseline --split-mode drug
+gut-drug-microbiome step2 assemble
+gut-drug-microbiome step3 simulate --drug-query metformin
+gut-drug-microbiome web serve --host 127.0.0.1 --port 8080
+```
+
+自动化测试：
+
+```bash
+pytest
+```
+
 安装 Step 1 最小依赖后，依次运行：
 
 ```bash

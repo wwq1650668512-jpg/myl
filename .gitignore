@@ -1,11 +1,21 @@
 # Python cache
 __pycache__/
+**/__pycache__/
 *.py[cod]
 *.pyo
 
 # Virtual environments
 .venv/
 venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+build/
+dist/
+*.egg-info/
 
 # Editor and OS noise
 .DS_Store
@@ -20,13 +30,16 @@ Thumbs.db
 tmp/
 temp/
 
-# Large generated project artifacts
-data/
-models/
-predictions/
-logs/
+# Generated project artifacts
+/data/interim/
+/data/processed/
+/data/raw/step1/
+/models/
+/predictions/
+/logs/
 
 # Optional local outputs
 *.joblib
 *.pt
 *.ckpt
+.env.local

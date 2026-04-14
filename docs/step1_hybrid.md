@@ -9,6 +9,12 @@
 
 这样后续 Step 2/3 可以直接读取一份标准输出，而不需要分别调用两个模型。
 
+最近一轮（`2026-04-14`）新增了“药物类型感知”的现实性约束，不再只做纯模型打分。  
+目标是让 Step 1 输出更贴近真实药理语义，尤其避免：
+
+- `Rifaximin` 这类 `eubiotic_modulator` 被预测成“全面强杀菌”
+- `Lubiprostone` 这类 `host_pathway_agent` 被预测成“广谱抗菌”
+
 ## 默认模型
 
 - 分类模型：
@@ -46,6 +52,44 @@
   - 否则如果 `predicted_effect_score >= 0.2`，输出 `promote`
   - 否则输出 `no_effect`
 
+## 新增：drug-profile-aware 先验约束
+
+实现位置：[hybrid.py](../src/gut_drug_microbiome/step1/hybrid.py)
+
+在 `predict_step1_hybrid(...)` 的最终输出前，会执行 `_apply_step1_drug_profile_constraints(...)`。
+
+### 约束 1：`eubiotic_modulator`
+
+- 适用对象：如 `Rifaximin`
+- 核心逻辑：对核心产丁酸菌的“强抑制”进行裁剪
+- 重点保护菌：
+  - `Faecalibacterium prausnitzii`
+  - `Roseburia spp.`
+  - `Eubacterium rectale`
+- 目标：避免出现“核心产丁酸菌几乎全部被强抑制”的不现实输出
+
+### 约束 2：`host_pathway_agent`
+
+- 适用对象：如 `Lubiprostone`
+- 核心逻辑：
+  - 全局下调直接微生物效应强度
+  - 默认回归 `no_effect`
+  - 仅保留少量高证据尾部效应
+- 目标：让宿主通路药物与“真正广谱抗生素”在 Step 1 表现上可区分
+
+## 新增输出字段
+
+`predictions.csv` 新增以下字段（用于追溯约束是否生效）：
+
+- `step1_drug_profile`
+- `step1_constraint_applied`
+- `step1_constraint_reason`
+
+`summary.json` 新增：
+
+- `step1_drug_profile_counts`
+- `step1_constraint_summary`
+
 ## 当前全表推理结果
 
 - 输入：`43,109` 个药物-微生物 pair
@@ -59,3 +103,4 @@
 
 - 这份接口当前更适合做 Step 1 到 Step 3 的工程串联，不代表新的独立 benchmark。
 - 如果后续更换 `Chemprop` 或 `RDKit` 模型，只需要替换脚本参数中的模型路径，不需要改接口格式。
+- Step 1 的先验约束是“推理后处理约束层”，不改变底层训练参数，但会直接影响后续 disease ranking 与生态风险评估。

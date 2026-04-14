@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 from joblib import load
 
+from .enzyme_prior import annotate_step2_with_enzyme_priors
 from .mechanism import Step2MechanismProjector
 
 
@@ -102,6 +103,8 @@ def predict_step2_baseline(
     metrics_path: str | Path,
     applicability_reference_path: str | Path | None = None,
     mechanism_reference_path: str | Path | None = None,
+    enzyme_microbe_panel_path: str | Path | None = None,
+    enzyme_function_catalog_path: str | Path | None = None,
     probability_threshold: float | None = None,
     similarity_threshold: float = 0.25,
 ) -> dict[str, object]:
@@ -115,6 +118,8 @@ def predict_step2_baseline(
         metrics_path: Metrics JSON containing feature schemas and thresholds.
         applicability_reference_path: Optional reference for applicability calculations.
         mechanism_reference_path: Optional mechanism reference for projection annotations.
+        enzyme_microbe_panel_path: Optional curated microbe-enzyme prior table.
+        enzyme_function_catalog_path: Optional enzyme function catalog matched against drug semantics.
         probability_threshold: Optional override for the metabolized probability cutoff.
         similarity_threshold: Minimum fingerprint similarity used in applicability checks.
 
@@ -211,6 +216,11 @@ def predict_step2_baseline(
         predicted_probability_column="predicted_metabolized_probability",
         predicted_label_column="predicted_metabolism_label",
     )
+    predictions = annotate_step2_with_enzyme_priors(
+        predictions,
+        microbe_enzyme_panel_path=enzyme_microbe_panel_path,
+        enzyme_catalog_path=enzyme_function_catalog_path,
+    )
 
     predictions_path = output_dir / "predictions.csv"
     predictions.to_csv(predictions_path, index=False)
@@ -234,6 +244,13 @@ def predict_step2_baseline(
         "predicted_reaction_confidence",
         "predicted_candidate_product_count",
         "predicted_evidence_gene_count",
+        "predicted_enzyme_prior_flag",
+        "predicted_enzyme_match_count",
+        "predicted_enzyme_support_score",
+        "predicted_enzyme_step1_promote_support_score",
+        "predicted_enzyme_step1_inhibit_risk_score",
+        "predicted_enzyme_ids",
+        "predicted_enzyme_reaction_classes",
     ]
     existing_slim_columns = [column for column in slim_columns if column in predictions.columns]
     predictions_slim_path = output_dir / "predictions_slim.csv"
@@ -249,6 +266,10 @@ def predict_step2_baseline(
         if applicability_reference_path is None
         else str(applicability_reference_path),
         "mechanism_reference_path": None if mechanism_reference_path is None else str(mechanism_reference_path),
+        "enzyme_microbe_panel_path": None if enzyme_microbe_panel_path is None else str(enzyme_microbe_panel_path),
+        "enzyme_function_catalog_path": None
+        if enzyme_function_catalog_path is None
+        else str(enzyme_function_catalog_path),
         "probability_threshold": float(threshold),
         "similarity_threshold": float(similarity_threshold),
         "n_rows": int(len(predictions)),
@@ -258,6 +279,7 @@ def predict_step2_baseline(
         },
         "n_applicable_rows": int(predictions["applicability_flag"].sum()),
         "n_mechanism_projected_rows": int(predictions["predicted_mechanism_projection_flag"].fillna(False).sum()),
+        "n_enzyme_prior_supported_rows": int(predictions["predicted_enzyme_prior_flag"].fillna(False).sum()),
         "predictions_path": str(predictions_path),
         "predictions_slim_path": str(predictions_slim_path),
     }

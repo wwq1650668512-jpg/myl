@@ -59,6 +59,18 @@ def main() -> None:
         help="Semi-mechanistic Step 2 reference used to project reaction class / product / gene evidence.",
     )
     parser.add_argument(
+        "--enzyme-microbe-panel-path",
+        default=ROOT / "data/reference/step2_microbe_enzyme_prior_long.csv",
+        type=Path,
+        help="Optional curated microbe-enzyme prior table for enzyme-derived mechanism support.",
+    )
+    parser.add_argument(
+        "--enzyme-function-catalog-path",
+        default=ROOT / "data/reference/step2_enzyme_function_catalog.csv",
+        type=Path,
+        help="Optional enzyme function catalog matched against compound semantics.",
+    )
+    parser.add_argument(
         "--probability-threshold",
         type=float,
         default=None,
@@ -80,6 +92,8 @@ def main() -> None:
         metrics_path=args.metrics_path,
         applicability_reference_path=args.applicability_reference_path,
         mechanism_reference_path=args.mechanism_reference_path,
+        enzyme_microbe_panel_path=args.enzyme_microbe_panel_path,
+        enzyme_function_catalog_path=args.enzyme_function_catalog_path,
         probability_threshold=args.probability_threshold,
         similarity_threshold=args.similarity_threshold,
     )

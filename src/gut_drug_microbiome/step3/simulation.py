@@ -8,8 +8,13 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from gut_drug_microbiome.utils.text import canonicalize_key as _canonicalize_key
+from gut_drug_microbiome.utils.text import normalize_whitespace as _canonicalize_text
+
 ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_TCG_PROXY_MAPPING_PATH = ROOT / "data/processed/health_signature/microbe_tcg_proxy_mapping.csv"
+DEFAULT_CROSS_FEEDING_EDGES_PATH = ROOT / "data/reference/cross_feeding_edges.csv"
+DEFAULT_ENZYME_FUNCTION_CATALOG_PATH = ROOT / "data/reference/step2_enzyme_function_catalog.csv"
 
 
 BENEFICIAL_GENERA = {
@@ -121,19 +126,6 @@ BUILTIN_SCENARIOS: dict[str, dict[str, object]] = {
     },
 }
 
-
-def _canonicalize_text(value: object) -> str:
-    """Normalize free text by stripping and collapsing repeated whitespace."""
-    if pd.isna(value):
-        return ""
-    return re.sub(r"\s+", " ", str(value).strip())
-
-
-def _canonicalize_key(value: object) -> str:
-    """Build a lowercase alphanumeric key used for fuzzy matching."""
-    return re.sub(r"[^a-z0-9]+", "", _canonicalize_text(value).lower())
-
-
 def _normalize_abundances(abundances: dict[str, float], minimum: float = 0.0) -> dict[str, float]:
     """Clip, renormalize, and return a valid relative-abundance distribution."""
     clipped = {key: max(float(value), minimum) for key, value in abundances.items() if float(value) > 0 or minimum > 0}
@@ -153,6 +145,16 @@ def _parse_multi_value(value: object) -> list[str]:
     return [item.strip() for item in text.split(";") if item.strip()]
 
 
+def _parse_flexible_multi_value(value: object) -> list[str]:
+    """Split a flexible delimited field into a list of non-empty items."""
+    if pd.isna(value):
+        return []
+    text = str(value).strip()
+    if not text:
+        return []
+    return [item.strip() for item in re.split(r"[;|]", text) if item.strip()]
+
+
 def _coerce_float(value: object, default: float = 0.0) -> float:
     """Convert a scalar-like value to float, falling back to a default."""
     numeric = pd.to_numeric(pd.Series([value]), errors="coerce").iloc[0]
@@ -170,6 +172,33 @@ def _coerce_bool_text(value: object) -> bool:
     return _canonicalize_key(value) in {"1", "true", "yes", "y", "ready"}
 
 
+def _clip01(value: float) -> float:
+    """Clip a scalar into the closed interval [0, 1]."""
+    return float(np.clip(float(value), 0.0, 1.0))
+
+
+def _evidence_level_weight(value: object) -> float:
+    """Map qualitative evidence tiers onto a small numeric scale."""
+    key = _canonicalize_key(value)
+    if key == "high":
+        return 1.0
+    if key == "medium":
+        return 0.7
+    if key == "low":
+        return 0.45
+    return 0.3
+
+
+def _jaccard_similarity(left: set[str], right: set[str]) -> float:
+    """Compute a Jaccard similarity score between two finite sets."""
+    if not left or not right:
+        return 0.0
+    union = left | right
+    if not union:
+        return 0.0
+    return float(len(left & right) / len(union))
+
+
 def _first_nonempty_text(frame: pd.DataFrame, column: str, default: str) -> str:
     """Return the first non-empty text value from a column, else a default string."""
     if column not in frame.columns:
@@ -184,6 +213,29 @@ def _first_nonempty_text(frame: pd.DataFrame, column: str, default: str) -> str:
 def _scenario_names() -> list[str]:
     """Return the sorted names of all builtin Step 3 simulation scenarios."""
     return sorted(BUILTIN_SCENARIOS)
+
+
+def _build_drug_context_keys(drug_frame: pd.DataFrame) -> set[str]:
+    """Collect flexible compound-name and semantic-family keys for reference matching."""
+    keys: set[str] = set()
+    for column in [
+        "chemical_name",
+        "compound_name_normalized",
+        "compound_semantic_family",
+        "compound_semantic_aliases",
+        "compound_semantic_keywords",
+    ]:
+        if column not in drug_frame.columns:
+            continue
+        for value in drug_frame[column].dropna().astype(str):
+            key = _canonicalize_key(value)
+            if key:
+                keys.add(key)
+            for item in _parse_flexible_multi_value(value):
+                item_key = _canonicalize_key(item)
+                if item_key:
+                    keys.add(item_key)
+    return keys
 
 
 def _build_microbe_metadata(frame: pd.DataFrame) -> pd.DataFrame:
@@ -456,6 +508,8 @@ def _health_index(
     baseline_abundances: dict[str, float],
     microbe_metadata: pd.DataFrame,
     tcg_membership_map: dict[str, str] | None = None,
+    interaction_metrics: dict[str, object] | None = None,
+    baseline_interaction_rho: float = 0.0,
 ) -> dict[str, float]:
     """Compute composite health metrics from diversity, balance, and baseline stability."""
     diversity = _normalized_shannon(abundances)
@@ -463,7 +517,23 @@ def _health_index(
     risk_fraction = _weighted_fraction(abundances, microbe_metadata, RISK_GENERA)
     stability = _stability_score(abundances, baseline_abundances)
     balance = max(0.0, min(1.0, 0.5 + beneficial_fraction - risk_fraction))
-    health_index = 100.0 * (0.40 * diversity + 0.35 * balance + 0.25 * stability)
+    health_index_legacy = 100.0 * (0.40 * diversity + 0.35 * balance + 0.25 * stability)
+    interaction_metrics = interaction_metrics or {}
+    interaction_balance_rho = float(np.clip(_coerce_float(interaction_metrics.get("interaction_balance_rho"), default=0.0), -1.0, 1.0))
+    interaction_balance_shift = float(interaction_balance_rho - float(baseline_interaction_rho))
+    interaction_coverage = _clip01(_coerce_float(interaction_metrics.get("interaction_coverage"), default=0.0))
+    interaction_competitiveness = float(max(0.0, min(1.0, 0.5 - 0.5 * interaction_balance_rho)))
+    interaction_shift_score = float(max(0.0, min(1.0, 1.0 - max(0.0, interaction_balance_shift))))
+    interaction_component = float(
+        interaction_coverage * (0.65 * interaction_competitiveness + 0.35 * interaction_shift_score)
+        + (1.0 - interaction_coverage) * 0.5
+    )
+    health_index = 100.0 * (
+        0.30 * diversity
+        + 0.20 * balance
+        + 0.20 * stability
+        + 0.30 * interaction_component
+    )
     tcg_membership_map = tcg_membership_map or {}
     tcg_guild_1_fraction = float(
         sum(float(abundances.get(nt_code, 0.0)) for nt_code, membership in tcg_membership_map.items() if membership == "guild_1")
@@ -477,7 +547,15 @@ def _health_index(
         tcg_guild_2_share = float(tcg_guild_2_fraction / tcg_mapped_fraction)
         tcg_balance = float(max(0.0, min(1.0, 0.5 + tcg_guild_1_share - tcg_guild_2_share)))
         tcg_balance_coverage_adjusted = float(tcg_mapped_fraction * tcg_balance + (1.0 - tcg_mapped_fraction) * 0.5)
-        tcg_health_index = float(100.0 * (0.40 * diversity + 0.35 * tcg_balance_coverage_adjusted + 0.25 * stability))
+        tcg_health_index = float(
+            100.0
+            * (
+                0.28 * diversity
+                + 0.22 * tcg_balance_coverage_adjusted
+                + 0.20 * stability
+                + 0.30 * interaction_component
+            )
+        )
     else:
         tcg_guild_1_share = float("nan")
         tcg_guild_2_share = float("nan")
@@ -486,10 +564,29 @@ def _health_index(
         tcg_health_index = float("nan")
     return {
         "health_index": float(max(0.0, min(100.0, health_index))),
+        "health_index_legacy": float(max(0.0, min(100.0, health_index_legacy))),
         "diversity": float(diversity),
         "beneficial_fraction": float(beneficial_fraction),
         "risk_fraction": float(risk_fraction),
         "stability": float(stability),
+        "interaction_component": float(interaction_component),
+        "interaction_coverage": float(interaction_coverage),
+        "interaction_balance_rho": float(interaction_balance_rho),
+        "interaction_balance_shift": float(interaction_balance_shift),
+        "interaction_competitiveness": float(interaction_competitiveness),
+        "interaction_shift_score": float(interaction_shift_score),
+        "positive_interaction_strength": float(
+            _coerce_float(interaction_metrics.get("positive_interaction_strength"), default=0.0)
+        ),
+        "negative_interaction_strength": float(
+            _coerce_float(interaction_metrics.get("negative_interaction_strength"), default=0.0)
+        ),
+        "interaction_positive_share": float(
+            _coerce_float(interaction_metrics.get("interaction_positive_share"), default=0.0)
+        ),
+        "interaction_negative_share": float(
+            _coerce_float(interaction_metrics.get("interaction_negative_share"), default=0.0)
+        ),
         "tcg_guild_1_fraction": float(tcg_guild_1_fraction),
         "tcg_guild_2_fraction": float(tcg_guild_2_fraction),
         "tcg_mapped_fraction": float(tcg_mapped_fraction),
@@ -561,6 +658,296 @@ def _build_applicability_map(drug_frame: pd.DataFrame) -> dict[str, float]:
     return applicability
 
 
+def _load_cross_feeding_reference(
+    cross_feeding_reference_path: str | Path | None,
+    compound_context_keys: set[str],
+) -> list[dict[str, object]]:
+    """Load compound-aware curated cross-feeding edges relevant to the current drug context."""
+    if cross_feeding_reference_path is None:
+        return []
+    path = Path(cross_feeding_reference_path)
+    if not path.exists():
+        return []
+
+    raw = pd.read_csv(path, low_memory=False)
+    if raw.empty:
+        return []
+
+    matched_rows: list[dict[str, object]] = []
+    for _, row in raw.iterrows():
+        row_keys: set[str] = set()
+        for column in [
+            "compound_name_raw",
+            "compound_name_normalized",
+            "compound_aliases",
+            "compound_family",
+            "match_keywords",
+        ]:
+            key = _canonicalize_key(row.get(column))
+            if key:
+                row_keys.add(key)
+            for item in _parse_flexible_multi_value(row.get(column)):
+                item_key = _canonicalize_key(item)
+                if item_key:
+                    row_keys.add(item_key)
+        if compound_context_keys and not (row_keys & compound_context_keys):
+            continue
+        matched_rows.append(
+            {
+                "producer_key": _canonicalize_key(row.get("producer_microbe_label")),
+                "consumer_key": _canonicalize_key(row.get("consumer_microbe_label")),
+                "evidence_level": row.get("evidence_level"),
+                "evidence_type": row.get("evidence_type"),
+            }
+        )
+    return matched_rows
+
+
+def _load_cross_feeding_enzyme_weights(
+    enzyme_function_catalog_path: str | Path | None,
+) -> dict[str, float]:
+    """Load enzyme-weight priors for functions likely to create cross-feeding opportunities."""
+    if enzyme_function_catalog_path is None:
+        return {}
+    path = Path(enzyme_function_catalog_path)
+    if not path.exists():
+        return {}
+
+    raw = pd.read_csv(path, low_memory=False)
+    if raw.empty:
+        return {}
+
+    support_roles = {
+        _canonicalize_key("cross_feeding_support"),
+        _canonicalize_key("metabolism_supported_promote"),
+        _canonicalize_key("nutrient_release_support"),
+        _canonicalize_key("community_context_modulation"),
+    }
+    weights: dict[str, float] = {}
+    for _, row in raw.iterrows():
+        enzyme_id = _canonicalize_text(row.get("enzyme_id"))
+        if not enzyme_id:
+            continue
+        role_key = _canonicalize_key(row.get("step1_feedback_role"))
+        if role_key not in support_roles:
+            continue
+        weights[enzyme_id] = _clip01(
+            max(
+                _coerce_float(row.get("step1_promote_weight"), default=0.0),
+                0.7 * _coerce_float(row.get("metabolism_weight"), default=0.0),
+            )
+        )
+    return weights
+
+
+def _build_interaction_model(
+    drug_frame: pd.DataFrame,
+    microbe_metadata: pd.DataFrame,
+    cross_feeding_reference_path: str | Path | None,
+    enzyme_function_catalog_path: str | Path | None,
+) -> dict[str, object]:
+    """Build a lightweight positive-vs-negative interaction model for one drug scenario."""
+    compound_context_keys = _build_drug_context_keys(drug_frame)
+    curated_edges = _load_cross_feeding_reference(
+        cross_feeding_reference_path=cross_feeding_reference_path,
+        compound_context_keys=compound_context_keys,
+    )
+    cross_feeding_enzyme_weights = _load_cross_feeding_enzyme_weights(
+        enzyme_function_catalog_path=enzyme_function_catalog_path
+    )
+
+    species_lookup: dict[str, str] = {}
+    for _, row in microbe_metadata.iterrows():
+        nt_code = str(row["nt_code"])
+        for candidate in [
+            row.get("microbe_label"),
+            row.get("species_label"),
+            row.get("species_name"),
+        ]:
+            key = _canonicalize_key(candidate)
+            if key:
+                species_lookup[key] = nt_code
+
+    curated_positive_edges: dict[tuple[str, str], float] = {}
+    for item in curated_edges:
+        producer_nt = species_lookup.get(str(item["producer_key"]))
+        consumer_nt = species_lookup.get(str(item["consumer_key"]))
+        if not producer_nt or not consumer_nt or producer_nt == consumer_nt:
+            continue
+        curated_weight = _evidence_level_weight(item.get("evidence_level"))
+        if _canonicalize_key(item.get("evidence_type")) == _canonicalize_key("cross_feeding_supported_promote"):
+            curated_weight += 0.15
+        edge_key = (producer_nt, consumer_nt)
+        curated_positive_edges[edge_key] = max(curated_positive_edges.get(edge_key, 0.0), curated_weight)
+
+    metadata_map = microbe_metadata.set_index("nt_code").to_dict(orient="index")
+    microbe_profiles: dict[str, dict[str, object]] = {}
+    for _, row in drug_frame.iterrows():
+        nt_code = str(row["nt_code"])
+        effect_score = _coerce_float(
+            row.get("step1_predicted_effect_score", row.get("predicted_effect_score")),
+            default=0.0,
+        )
+        positive_effect_score = _clip01(max(effect_score, 0.0))
+        metabolized_probability = _clip01(_coerce_float(row.get("predicted_metabolized_probability"), default=0.0))
+        depletion_strength = _clip01(
+            max(0.0, -_coerce_float(row.get("predicted_parent_depletion_fraction"), default=0.0))
+        )
+        mechanism_support = _clip01(_coerce_float(row.get("predicted_mechanism_support_score"), default=0.0))
+        promote_support = _clip01(_coerce_float(row.get("predicted_enzyme_step1_promote_support_score"), default=0.0))
+        enzyme_presence = _clip01(_coerce_float(row.get("predicted_enzyme_presence_score"), default=0.0))
+        candidate_product_score = _clip01(_coerce_float(row.get("predicted_candidate_product_count"), default=0.0) / 3.0)
+        enzyme_ids = {_canonicalize_text(item) for item in _parse_multi_value(row.get("predicted_enzyme_ids"))}
+        enzyme_ids = {item for item in enzyme_ids if item}
+        reaction_classes = {_canonicalize_text(item) for item in _parse_multi_value(row.get("predicted_reaction_class"))}
+        reaction_classes = {item for item in reaction_classes if item}
+        cross_feeding_enzyme_score = _clip01(
+            sum(cross_feeding_enzyme_weights.get(enzyme_id, 0.0) for enzyme_id in enzyme_ids)
+        )
+        producer_score = _clip01(
+            0.25 * promote_support
+            + 0.15 * enzyme_presence
+            + 0.15 * candidate_product_score
+            + 0.20 * cross_feeding_enzyme_score
+            + 0.10 * mechanism_support
+            + 0.15 * metabolized_probability
+            + 0.10 * positive_effect_score
+        )
+        consumer_score = _clip01(
+            0.40 * promote_support
+            + 0.25 * positive_effect_score
+            + 0.15 * cross_feeding_enzyme_score
+            + 0.10 * candidate_product_score
+            + 0.10 * metabolized_probability
+        )
+        competition_score = _clip01(
+            0.50 * metabolized_probability
+            + 0.35 * depletion_strength
+            + 0.15 * max(mechanism_support, enzyme_presence)
+        )
+        microbe_profiles[nt_code] = {
+            "producer_score": producer_score,
+            "consumer_score": consumer_score,
+            "competition_score": competition_score,
+            "enzyme_ids": enzyme_ids,
+            "reaction_classes": reaction_classes,
+            "genus": _canonicalize_text(metadata_map.get(nt_code, {}).get("genus")),
+            "family": _canonicalize_text(metadata_map.get(nt_code, {}).get("family")),
+            "phylum": _canonicalize_text(metadata_map.get(nt_code, {}).get("phylum")),
+        }
+
+    positive_edges: dict[tuple[str, str], float] = {}
+    negative_pairs: dict[tuple[str, str], float] = {}
+    nt_codes = sorted(microbe_profiles)
+    for source_nt in nt_codes:
+        source_profile = microbe_profiles[source_nt]
+        for target_nt in nt_codes:
+            if source_nt == target_nt:
+                continue
+            target_profile = microbe_profiles[target_nt]
+            generic_positive = math.sqrt(
+                float(source_profile["producer_score"]) * float(target_profile["consumer_score"])
+            )
+            if source_profile["genus"] and source_profile["genus"] == target_profile["genus"]:
+                generic_positive *= 0.8
+            elif source_profile["family"] and source_profile["family"] == target_profile["family"]:
+                generic_positive *= 0.9
+            curated_bonus = curated_positive_edges.get((source_nt, target_nt), 0.0)
+            positive_weight = min(1.5, 0.55 * generic_positive + curated_bonus)
+            if positive_weight >= 0.05:
+                positive_edges[(source_nt, target_nt)] = float(positive_weight)
+
+        for target_nt in nt_codes:
+            if source_nt >= target_nt:
+                continue
+            target_profile = microbe_profiles[target_nt]
+            taxonomic_overlap = 0.0
+            if source_profile["genus"] and source_profile["genus"] == target_profile["genus"]:
+                taxonomic_overlap = 0.25
+            elif source_profile["family"] and source_profile["family"] == target_profile["family"]:
+                taxonomic_overlap = 0.12
+            elif source_profile["phylum"] and source_profile["phylum"] == target_profile["phylum"]:
+                taxonomic_overlap = 0.05
+            enzyme_overlap = _jaccard_similarity(
+                set(source_profile["enzyme_ids"]),
+                set(target_profile["enzyme_ids"]),
+            )
+            reaction_overlap = _jaccard_similarity(
+                set(source_profile["reaction_classes"]),
+                set(target_profile["reaction_classes"]),
+            )
+            competition_weight = min(
+                1.5,
+                0.55 * math.sqrt(float(source_profile["competition_score"]) * float(target_profile["competition_score"]))
+                + 0.20 * enzyme_overlap
+                + 0.10 * reaction_overlap
+                + taxonomic_overlap,
+            )
+            if competition_weight >= 0.08:
+                negative_pairs[(source_nt, target_nt)] = float(competition_weight)
+
+    involved_nt_codes = {
+        nt_code
+        for pair in list(positive_edges) + list(negative_pairs)
+        for nt_code in pair
+    }
+    return {
+        "compound_context_keys": sorted(compound_context_keys),
+        "curated_reference_edge_count": int(len(curated_positive_edges)),
+        "positive_edge_count": int(len(positive_edges)),
+        "negative_edge_count": int(len(negative_pairs)),
+        "involved_nt_codes": involved_nt_codes,
+        "positive_edges": positive_edges,
+        "negative_pairs": negative_pairs,
+    }
+
+
+def _summarize_interaction_state(
+    abundances: dict[str, float],
+    interaction_model: dict[str, object],
+) -> dict[str, object]:
+    """Summarize the current interaction regime as positive-vs-negative network balance."""
+    positive_edges = interaction_model.get("positive_edges", {})
+    negative_pairs = interaction_model.get("negative_pairs", {})
+    positive_incoming_pressure = {nt_code: 0.0 for nt_code in abundances}
+    negative_incoming_pressure = {nt_code: 0.0 for nt_code in abundances}
+
+    positive_strength = 0.0
+    for (source_nt, target_nt), weight in positive_edges.items():
+        source_abundance = float(abundances.get(source_nt, 0.0))
+        target_abundance = float(abundances.get(target_nt, 0.0))
+        if source_abundance <= 0 or target_abundance <= 0:
+            continue
+        positive_strength += source_abundance * target_abundance * float(weight)
+        positive_incoming_pressure[target_nt] = positive_incoming_pressure.get(target_nt, 0.0) + source_abundance * float(weight)
+
+    negative_strength = 0.0
+    for (left_nt, right_nt), weight in negative_pairs.items():
+        left_abundance = float(abundances.get(left_nt, 0.0))
+        right_abundance = float(abundances.get(right_nt, 0.0))
+        if left_abundance <= 0 or right_abundance <= 0:
+            continue
+        negative_strength += 2.0 * left_abundance * right_abundance * float(weight)
+        negative_incoming_pressure[left_nt] = negative_incoming_pressure.get(left_nt, 0.0) + right_abundance * float(weight)
+        negative_incoming_pressure[right_nt] = negative_incoming_pressure.get(right_nt, 0.0) + left_abundance * float(weight)
+
+    total_strength = positive_strength + negative_strength
+    interaction_balance_rho = 0.0 if total_strength <= 0 else (positive_strength - negative_strength) / total_strength
+    involved_nt_codes = set(interaction_model.get("involved_nt_codes", set()))
+    interaction_coverage = float(sum(float(abundances.get(nt_code, 0.0)) for nt_code in involved_nt_codes))
+    return {
+        "positive_interaction_strength": float(positive_strength),
+        "negative_interaction_strength": float(negative_strength),
+        "total_interaction_strength": float(total_strength),
+        "interaction_balance_rho": float(np.clip(interaction_balance_rho, -1.0, 1.0)),
+        "interaction_positive_share": float(0.0 if total_strength <= 0 else positive_strength / total_strength),
+        "interaction_negative_share": float(0.0 if total_strength <= 0 else negative_strength / total_strength),
+        "interaction_coverage": float(np.clip(interaction_coverage, 0.0, 1.0)),
+        "positive_incoming_pressure": positive_incoming_pressure,
+        "negative_incoming_pressure": negative_incoming_pressure,
+    }
+
+
 def run_step3_simulation(
     integrated_predictions_path: str | Path,
     output_dir: str | Path,
@@ -568,6 +955,8 @@ def run_step3_simulation(
     scenario_name: str = "healthy_reference",
     community_table_path: str | Path | None = None,
     tcg_proxy_mapping_path: str | Path | None = DEFAULT_TCG_PROXY_MAPPING_PATH,
+    cross_feeding_reference_path: str | Path | None = DEFAULT_CROSS_FEEDING_EDGES_PATH,
+    enzyme_function_catalog_path: str | Path | None = DEFAULT_ENZYME_FUNCTION_CATALOG_PATH,
     n_steps: int = 14,
     initial_dose: float = 1.0,
     repeat_dose: float = 1.0,
@@ -577,6 +966,8 @@ def run_step3_simulation(
     metabolism_scale: float = 0.85,
     effect_scale: float = 0.55,
     ecology_strength: float = 0.20,
+    interaction_scale: float = 0.18,
+    cooperative_metabolism_boost: float = 0.35,
     abundance_floor: float = 1e-6,
 ) -> dict[str, object]:
     """Run the Step 3 community simulation and export trajectories plus summaries.
@@ -588,6 +979,8 @@ def run_step3_simulation(
         scenario_name: Builtin scenario used when no custom community table is supplied.
         community_table_path: Optional custom community abundance table.
         tcg_proxy_mapping_path: Optional guild mapping file used for extra health metrics.
+        cross_feeding_reference_path: Optional curated positive-interaction reference table.
+        enzyme_function_catalog_path: Optional enzyme catalog used to infer interaction roles.
         n_steps: Number of discrete simulation time steps.
         initial_dose: Initial parent-drug dose at time zero.
         repeat_dose: Dose amount added at each dosing interval after the first step.
@@ -597,6 +990,8 @@ def run_step3_simulation(
         metabolism_scale: Global scale factor on microbial metabolism pressure.
         effect_scale: Global scale factor on Step 1 drug-pressure effects.
         ecology_strength: Strength of pull back toward the baseline community.
+        interaction_scale: Strength of the interaction-aware feedback term.
+        cooperative_metabolism_boost: Extra metabolism gain in cross-feeding-dominant states.
         abundance_floor: Minimum abundance floor applied during renormalization.
 
     Returns:
@@ -634,6 +1029,12 @@ def run_step3_simulation(
     metabolism_prob_map = drug_frame.set_index("nt_code")["predicted_metabolized_probability"].to_dict()
     depletion_map = drug_frame.set_index("nt_code")["predicted_parent_depletion_fraction"].to_dict()
     applicability_map = _build_applicability_map(drug_frame)
+    interaction_model = _build_interaction_model(
+        drug_frame=drug_frame,
+        microbe_metadata=microbe_metadata,
+        cross_feeding_reference_path=cross_feeding_reference_path,
+        enzyme_function_catalog_path=enzyme_function_catalog_path,
+    )
     prestwick_id = _first_nonempty_text(drug_frame, "prestwick_id", default=drug_query)
     chemical_name = _first_nonempty_text(drug_frame, "chemical_name", default=prestwick_id or drug_query)
 
@@ -646,24 +1047,40 @@ def run_step3_simulation(
     history_rows: list[dict[str, object]] = []
     abundance_rows: list[dict[str, object]] = []
 
+    baseline_interaction_metrics = _summarize_interaction_state(
+        abundances=baseline_abundances,
+        interaction_model=interaction_model,
+    )
+    baseline_interaction_rho = float(baseline_interaction_metrics["interaction_balance_rho"])
     initial_health = _health_index(
         current_abundances,
         baseline_abundances,
         microbe_metadata=microbe_metadata,
         tcg_membership_map=tcg_membership_map,
+        interaction_metrics=baseline_interaction_metrics,
+        baseline_interaction_rho=baseline_interaction_rho,
     )
 
     def _record_timepoint(timepoint: int) -> None:
         nonlocal history_rows, abundance_rows
+        interaction_metrics = _summarize_interaction_state(
+            abundances=current_abundances,
+            interaction_model=interaction_model,
+        )
         health = _health_index(
             current_abundances,
             baseline_abundances,
             microbe_metadata=microbe_metadata,
             tcg_membership_map=tcg_membership_map,
+            interaction_metrics=interaction_metrics,
+            baseline_interaction_rho=baseline_interaction_rho,
         )
         mean_applicability = _mean_applicability(current_abundances, applicability_map)
         parent_retention = 0.0 if cumulative_dose <= 0 else current_parent_drug / cumulative_dose
         dysbiosis_penalty = max(0.0, initial_health["health_index"] - health["health_index"])
+        interaction_dysbiosis_penalty = 100.0 * max(0.0, health["interaction_balance_shift"]) * max(
+            0.25, health["interaction_coverage"]
+        )
         uncertainty_penalty = 100.0 * max(0.0, 1.0 - mean_applicability)
         efficacy_proxy = 100.0 * parent_retention
         stability_score = 100.0 * health["stability"]
@@ -672,9 +1089,10 @@ def run_step3_simulation(
         metabolite_burden_penalty = 100.0 * max(0.0, min(1.0, metabolite_burden_ratio))
         benefit_subscore = 0.55 * efficacy_proxy + 0.45 * community_preservation_score
         risk_subscore = (
-            0.50 * dysbiosis_penalty
-            + 0.30 * uncertainty_penalty
-            + 0.20 * metabolite_burden_penalty
+            0.38 * dysbiosis_penalty
+            + 0.22 * interaction_dysbiosis_penalty
+            + 0.22 * uncertainty_penalty
+            + 0.18 * metabolite_burden_penalty
         )
         development_score_balance = benefit_subscore - risk_subscore
         development_score_raw = development_score_balance
@@ -689,10 +1107,21 @@ def run_step3_simulation(
                 "cumulative_dose": float(cumulative_dose),
                 "parent_retention_ratio": float(parent_retention),
                 "health_index": health["health_index"],
+                "health_index_legacy": health["health_index_legacy"],
                 "diversity": health["diversity"],
                 "beneficial_fraction": health["beneficial_fraction"],
                 "risk_fraction": health["risk_fraction"],
                 "stability": health["stability"],
+                "interaction_component": health["interaction_component"],
+                "interaction_coverage": health["interaction_coverage"],
+                "positive_interaction_strength": health["positive_interaction_strength"],
+                "negative_interaction_strength": health["negative_interaction_strength"],
+                "interaction_positive_share": health["interaction_positive_share"],
+                "interaction_negative_share": health["interaction_negative_share"],
+                "interaction_balance_rho": health["interaction_balance_rho"],
+                "interaction_balance_shift": health["interaction_balance_shift"],
+                "interaction_competitiveness": health["interaction_competitiveness"],
+                "interaction_shift_score": health["interaction_shift_score"],
                 "tcg_health_index": health["tcg_health_index"],
                 "tcg_guild_1_fraction": health["tcg_guild_1_fraction"],
                 "tcg_guild_2_fraction": health["tcg_guild_2_fraction"],
@@ -705,6 +1134,7 @@ def run_step3_simulation(
                 "stability_score": float(stability_score),
                 "mean_applicability": mean_applicability,
                 "dysbiosis_penalty": float(dysbiosis_penalty),
+                "interaction_dysbiosis_penalty": float(interaction_dysbiosis_penalty),
                 "uncertainty_penalty": float(uncertainty_penalty),
                 "metabolite_burden_ratio": float(metabolite_burden_ratio),
                 "metabolite_burden_penalty": float(metabolite_burden_penalty),
@@ -736,14 +1166,39 @@ def run_step3_simulation(
             dose_input = float(repeat_dose)
 
         drug_exposure = current_parent_drug / max(initial_dose, 1e-8)
+        interaction_state = _summarize_interaction_state(
+            abundances=current_abundances,
+            interaction_model=interaction_model,
+        )
         raw_abundances: dict[str, float] = {}
         weighted_metabolism = 0.0
         for nt_code, current_abundance in current_abundances.items():
             effect_score = _coerce_float(effect_map.get(nt_code), default=0.0)
             ecology_pull = ecology_strength * (baseline_abundances.get(nt_code, 0.0) - current_abundance)
+            positive_pressure = _coerce_float(
+                interaction_state["positive_incoming_pressure"].get(nt_code),
+                default=0.0,
+            )
+            negative_pressure = _coerce_float(
+                interaction_state["negative_incoming_pressure"].get(nt_code),
+                default=0.0,
+            )
+            interaction_delta = float(
+                np.clip(
+                    interaction_scale * (0.20 + 0.80 * drug_exposure) * (positive_pressure - negative_pressure),
+                    -0.75,
+                    0.75,
+                )
+            )
             # Clip the exponent to keep custom-SMILES simulations numerically stable
             # even when a regressor produces outlier effect scores.
-            growth_log_delta = float(np.clip(effect_scale * effect_score * drug_exposure + ecology_pull, -12.0, 12.0))
+            growth_log_delta = float(
+                np.clip(
+                    effect_scale * effect_score * drug_exposure + ecology_pull + interaction_delta,
+                    -12.0,
+                    12.0,
+                )
+            )
             growth_multiplier = math.exp(growth_log_delta)
             next_value = max(abundance_floor, current_abundance * growth_multiplier)
             raw_abundances[nt_code] = next_value
@@ -759,7 +1214,13 @@ def run_step3_simulation(
             weighted_metabolism += current_abundance * metabolized_probability * max(depletion_strength, 0.05 * metabolized_probability)
 
         current_abundances = _normalize_abundances(raw_abundances, minimum=abundance_floor)
-        parent_consumed = min(current_parent_drug, current_parent_drug * metabolism_scale * weighted_metabolism)
+        cooperative_metabolism_multiplier = 1.0 + cooperative_metabolism_boost * max(
+            0.0, _coerce_float(interaction_state.get("interaction_balance_rho"), default=0.0)
+        )
+        parent_consumed = min(
+            current_parent_drug,
+            current_parent_drug * metabolism_scale * cooperative_metabolism_multiplier * weighted_metabolism,
+        )
         parent_cleared = current_parent_drug * drug_clearance_rate
         current_parent_drug = max(0.0, current_parent_drug - parent_consumed - parent_cleared + dose_input)
         current_metabolite_pool = max(
@@ -796,6 +1257,13 @@ def run_step3_simulation(
         "metabolism_scale": float(metabolism_scale),
         "effect_scale": float(effect_scale),
         "ecology_strength": float(ecology_strength),
+        "interaction_scale": float(interaction_scale),
+        "cooperative_metabolism_boost": float(cooperative_metabolism_boost),
+        "cross_feeding_reference_path": None if cross_feeding_reference_path is None else str(cross_feeding_reference_path),
+        "enzyme_function_catalog_path": None if enzyme_function_catalog_path is None else str(enzyme_function_catalog_path),
+        "interaction_reference_edge_count": int(interaction_model["curated_reference_edge_count"]),
+        "interaction_positive_edge_count": int(interaction_model["positive_edge_count"]),
+        "interaction_negative_edge_count": int(interaction_model["negative_edge_count"]),
         "health_signature_mode": "tcg_proxy_secondary",
         "health_signature_source_path": tcg_mapping_metadata["tcg_proxy_mapping_path"],
         "health_signature_source_name": tcg_mapping_metadata["tcg_source_name"],
@@ -804,9 +1272,18 @@ def run_step3_simulation(
         "health_signature_mapped_microbe_count": int(tcg_mapping_metadata["tcg_mapped_microbe_count"]),
         "health_signature_panel_microbe_count": int(tcg_mapping_metadata["tcg_panel_microbe_count"]),
         "initial_health_index": float(trajectory_metrics.iloc[0]["health_index"]),
+        "initial_health_index_legacy": float(trajectory_metrics.iloc[0]["health_index_legacy"]),
         "final_health_index": float(final_row["health_index"]),
+        "final_health_index_legacy": float(final_row["health_index_legacy"]),
         "initial_tcg_health_index": float(trajectory_metrics.iloc[0]["tcg_health_index"]),
         "final_tcg_health_index": float(final_row["tcg_health_index"]),
+        "initial_interaction_balance_rho": float(trajectory_metrics.iloc[0]["interaction_balance_rho"]),
+        "final_interaction_balance_rho": float(final_row["interaction_balance_rho"]),
+        "final_interaction_balance_shift": float(final_row["interaction_balance_shift"]),
+        "final_interaction_component": float(final_row["interaction_component"]),
+        "final_positive_interaction_strength": float(final_row["positive_interaction_strength"]),
+        "final_negative_interaction_strength": float(final_row["negative_interaction_strength"]),
+        "interaction_dysbiosis_penalty_final": float(final_row["interaction_dysbiosis_penalty"]),
         "final_tcg_guild_1_fraction": float(final_row["tcg_guild_1_fraction"]),
         "final_tcg_guild_2_fraction": float(final_row["tcg_guild_2_fraction"]),
         "final_tcg_mapped_fraction": float(final_row["tcg_mapped_fraction"]),

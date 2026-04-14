@@ -459,6 +459,22 @@ body {
   color: var(--text);
 }
 
+.field-note-sm {
+  min-height: auto;
+  padding: 10px 12px;
+}
+
+.checkbox-line {
+  display: flex;
+  align-items: start;
+  gap: 10px;
+  line-height: 1.5;
+}
+
+.checkbox-line input {
+  margin-top: 3px;
+}
+
 .prediction-focus {
   display: flex;
   justify-content: space-between;
@@ -832,8 +848,22 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+.table-hint {
+  margin: 10px 0 12px;
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
 .table-wrap {
-  overflow-x: auto;
+  overflow: auto;
+  border: 1px solid rgba(62, 86, 76, 0.08);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.76);
+}
+
+.table-wrap-scroll {
+  max-height: 560px;
 }
 
 table {
@@ -850,18 +880,93 @@ td {
 }
 
 th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
   font-size: 0.82rem;
   text-transform: uppercase;
   letter-spacing: 0.10em;
   color: var(--muted);
+  background: rgba(250, 246, 238, 0.98);
 }
 
 tbody tr {
   transition: background 140ms ease;
 }
 
+tbody tr:nth-child(2n) {
+  background: rgba(255, 255, 255, 0.35);
+}
+
 tbody tr:hover {
   background: rgba(15, 118, 110, 0.04);
+}
+
+.microbe-cell {
+  display: grid;
+  gap: 6px;
+}
+
+.microbe-cell strong {
+  line-height: 1.35;
+}
+
+.context-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.context-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border: 1px solid transparent;
+}
+
+.context-tag-neutral {
+  background: rgba(241, 245, 249, 0.9);
+  border-color: rgba(148, 163, 184, 0.25);
+  color: #334155;
+}
+
+.context-tag-good {
+  background: rgba(220, 252, 231, 0.92);
+  border-color: rgba(22, 163, 74, 0.22);
+  color: #166534;
+}
+
+.context-tag-warn {
+  background: rgba(255, 237, 213, 0.92);
+  border-color: rgba(217, 119, 6, 0.22);
+  color: #9a3412;
+}
+
+.row-evidence {
+  margin-top: 2px;
+}
+
+.row-evidence summary {
+  cursor: pointer;
+  color: var(--accent);
+  font-size: 0.82rem;
+  font-weight: 700;
+  list-style-position: inside;
+}
+
+.row-evidence-content {
+  display: grid;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.row-evidence-item {
+  font-size: 0.82rem;
+  color: var(--muted);
+  line-height: 1.45;
 }
 
 .scenario-grid {
@@ -900,24 +1005,30 @@ tbody tr:hover {
 
 .toast {
   position: fixed;
-  right: 20px;
-  bottom: 20px;
-  min-width: 220px;
-  max-width: 360px;
+  left: 50%;
+  top: calc(14px + env(safe-area-inset-top, 0px));
+  z-index: 9999;
+  width: min(760px, calc(100vw - 24px));
   border-radius: 16px;
   padding: 14px 16px;
   background: rgba(31, 47, 42, 0.92);
   color: #fff;
   box-shadow: 0 20px 34px rgba(31, 47, 42, 0.24);
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: min(38vh, 280px);
+  overflow: auto;
   opacity: 0;
-  transform: translateY(14px);
+  transform: translate(-50%, -12px);
+  will-change: transform, opacity;
   pointer-events: none;
   transition: opacity 180ms ease, transform 180ms ease;
 }
 
 .toast.visible {
   opacity: 1;
-  transform: translateY(0);
+  transform: translate(-50%, 0);
+  pointer-events: auto;
 }
 
 @media (max-width: 1180px) {

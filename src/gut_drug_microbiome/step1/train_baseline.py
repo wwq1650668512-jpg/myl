@@ -30,6 +30,25 @@ from sklearn.preprocessing import OneHotEncoder
 
 NUMERIC_PREFIXES = ("morgan_fp_",)
 CATEGORICAL_PREFIXES = ("murcko_scaffold",)
+PROMOTE_STEP2_NUMERIC_FEATURES = [
+    "predicted_metabolized_probability",
+    "predicted_parent_depletion_fraction",
+    "drug_max_fingerprint_jaccard",
+    "predicted_reaction_confidence",
+    "predicted_mechanism_support_score",
+    "predicted_candidate_product_count",
+    "predicted_evidence_gene_count",
+    "predicted_enzyme_match_count",
+    "predicted_enzyme_presence_score",
+    "predicted_enzyme_support_score",
+    "predicted_enzyme_step1_promote_support_score",
+    "predicted_enzyme_step1_inhibit_risk_score",
+    "applicability_flag",
+    "predicted_mechanism_projection_flag",
+    "scaffold_seen_in_training",
+    "microbe_genus_seen_in_training",
+    "microbe_phylum_seen_in_training",
+]
 
 DEFAULT_NUMERIC_FEATURES = [
     "molecular_weight",
@@ -97,6 +116,16 @@ def _available_columns(frame: pd.DataFrame, desired: list[str]) -> list[str]:
     return [column for column in desired if column in frame.columns]
 
 
+def _numeric_columns_with_observations(frame: pd.DataFrame, columns: list[str]) -> list[str]:
+    """Keep only numeric feature columns that have at least one observed value."""
+    kept: list[str] = []
+    for column in columns:
+        values = pd.to_numeric(frame[column], errors="coerce")
+        if values.notna().any():
+            kept.append(column)
+    return kept
+
+
 def _prefixed_columns(frame: pd.DataFrame, prefixes: tuple[str, ...]) -> list[str]:
     """Collect all columns whose names start with any requested feature prefix."""
     columns: list[str] = []
@@ -139,12 +168,23 @@ def _make_split(
     return train_idx, test_idx
 
 
-def _build_preprocessor(frame: pd.DataFrame) -> tuple[ColumnTransformer, list[str], list[str]]:
+def _build_preprocessor(
+    frame: pd.DataFrame,
+    extra_numeric_features: list[str] | None = None,
+    extra_categorical_features: list[str] | None = None,
+) -> tuple[ColumnTransformer, list[str], list[str]]:
     """Construct the sklearn preprocessing pipeline and list the selected features."""
-    numeric_features = _available_columns(frame, DEFAULT_NUMERIC_FEATURES) + _prefixed_columns(frame, NUMERIC_PREFIXES)
-    categorical_features = _available_columns(frame, DEFAULT_CATEGORICAL_FEATURES) + _prefixed_columns(
+    numeric_candidates = DEFAULT_NUMERIC_FEATURES + ([] if extra_numeric_features is None else extra_numeric_features)
+    categorical_candidates = DEFAULT_CATEGORICAL_FEATURES + (
+        [] if extra_categorical_features is None else extra_categorical_features
+    )
+    numeric_features = _available_columns(frame, numeric_candidates) + _prefixed_columns(frame, NUMERIC_PREFIXES)
+    categorical_features = _available_columns(frame, categorical_candidates) + _prefixed_columns(
         frame, CATEGORICAL_PREFIXES
     )
+    numeric_features = list(dict.fromkeys(numeric_features))
+    categorical_features = list(dict.fromkeys(categorical_features))
+    numeric_features = _numeric_columns_with_observations(frame, numeric_features)
 
     numeric_pipeline = Pipeline(
         steps=[
@@ -215,10 +255,41 @@ def _classifier_sample_weights(
     return np.asarray(weights, dtype=float)
 
 
+def _merge_promote_feature_table(frame: pd.DataFrame, promote_feature_table_path: str | Path | None) -> pd.DataFrame:
+    """Left-join optional Step 2-derived promote features onto a Step 1 table."""
+    if promote_feature_table_path is None:
+        return frame
+    promote_feature_table_path = Path(promote_feature_table_path)
+    if not promote_feature_table_path.exists():
+        raise FileNotFoundError(f"Promote feature table not found: {promote_feature_table_path}")
+
+    external = pd.read_csv(promote_feature_table_path, low_memory=False)
+    join_columns = [column for column in ["pair_id", "prestwick_id", "nt_code"] if column in frame.columns and column in external.columns]
+    if not join_columns:
+        raise ValueError("Promote feature table must share at least one of pair_id/prestwick_id/nt_code")
+
+    feature_columns = [column for column in PROMOTE_STEP2_NUMERIC_FEATURES if column in external.columns]
+    if not feature_columns:
+        return frame
+
+    external = external.loc[:, join_columns + feature_columns].drop_duplicates(subset=join_columns).copy()
+    merged = frame.merge(external, on=join_columns, how="left", suffixes=("", "_promote_aux"))
+    for column in feature_columns:
+        aux_column = f"{column}_promote_aux"
+        if aux_column in merged.columns:
+            if column in frame.columns:
+                merged[column] = merged[column].combine_first(merged[aux_column])
+            else:
+                merged[column] = merged[aux_column]
+            merged = merged.drop(columns=[aux_column])
+    return merged
+
+
 def train_step1_baseline(
     modeling_table_path: str | Path,
     output_dir: str | Path,
     silver_table_path: str | Path | None = None,
+    promote_feature_table_path: str | Path | None = None,
     split_mode: str = "drug",
     random_state: int = 42,
     test_size: float = 0.2,
@@ -226,6 +297,7 @@ def train_step1_baseline(
     source_weight_map: Mapping[str, float] | None = None,
     default_gold_weight: float = 1.0,
     default_silver_weight: float = 1.0,
+    enable_promote_head: bool = False,
     verbose: int = 1,
 ) -> dict:
     """Train the Step 1 ExtraTrees classifier and regressor and save their artifacts.
@@ -234,6 +306,7 @@ def train_step1_baseline(
         modeling_table_path: Path to the normalized Step 1 modeling table.
         output_dir: Directory where models, predictions, and metrics are written.
         silver_table_path: Optional weak-supervision table appended to classifier training.
+        promote_feature_table_path: Optional Step 2-derived feature table used only by the promote auxiliary head.
         split_mode: Evaluation split strategy such as random, drug, scaffold, or microbe.
         random_state: Random seed for reproducibility.
         test_size: Fraction of gold rows held out for evaluation.
@@ -241,6 +314,7 @@ def train_step1_baseline(
         source_weight_map: Optional source-specific classifier weights.
         default_gold_weight: Fallback classifier weight for gold rows.
         default_silver_weight: Fallback classifier weight for silver rows.
+        enable_promote_head: Whether to train an auxiliary promote-vs-not-promote classifier.
         verbose: Whether to print coarse progress logs.
 
     Returns:
@@ -257,6 +331,7 @@ def train_step1_baseline(
     _log(f"[step1] loading gold table from {modeling_table_path}")
     gold_frame = pd.read_csv(modeling_table_path, low_memory=False)
     gold_frame = gold_frame.dropna(subset=["effect_label", "binary_effect_label", "effect_score"]).reset_index(drop=True)
+    gold_frame = _merge_promote_feature_table(gold_frame, promote_feature_table_path)
 
     silver_frame = None
     if silver_table_path is not None:
@@ -269,6 +344,7 @@ def train_step1_baseline(
                 silver_frame["binary_effect_label"] = silver_frame["effect_label"]
             if "effect_score" not in silver_frame.columns:
                 silver_frame["effect_score"] = np.nan
+            silver_frame = _merge_promote_feature_table(silver_frame, promote_feature_table_path)
 
     classification_target = "effect_label"
     target_counts = gold_frame[classification_target].value_counts()
@@ -355,6 +431,81 @@ def train_step1_baseline(
     _log("[step1] fitting regressor")
     regressor.fit(x_train_reg, y_train_reg)
 
+    promote_classifier = None
+    promote_metrics: dict[str, object] | None = None
+    if enable_promote_head:
+        promote_preprocessor, promote_numeric_features, promote_categorical_features = _build_preprocessor(
+            feature_frame,
+            extra_numeric_features=PROMOTE_STEP2_NUMERIC_FEATURES,
+        )
+        promote_feature_columns = promote_numeric_features + promote_categorical_features
+        classifier_train_promote = _prepare_feature_frame(
+            classifier_train,
+            numeric_features=promote_numeric_features,
+            categorical_features=promote_categorical_features,
+        )
+        gold_test_promote = _prepare_feature_frame(
+            gold_test,
+            numeric_features=promote_numeric_features,
+            categorical_features=promote_categorical_features,
+        )
+        y_train_promote = np.where(classifier_train_promote["effect_label"].eq("promote"), "promote", "not_promote")
+        y_test_promote = np.where(gold_test_promote["effect_label"].eq("promote"), "promote", "not_promote")
+        if pd.Series(y_train_promote).nunique() >= 2:
+            _log("[step1] fitting promote auxiliary classifier")
+            promote_classifier = Pipeline(
+                steps=[
+                    ("preprocessor", clone(promote_preprocessor)),
+                    (
+                        "model",
+                        ExtraTreesClassifier(
+                            n_estimators=n_estimators,
+                            random_state=random_state,
+                            n_jobs=-1,
+                            class_weight="balanced_subsample",
+                            min_samples_leaf=2,
+                        ),
+                    ),
+                ]
+            )
+            promote_classifier.fit(
+                classifier_train_promote.loc[:, promote_feature_columns],
+                y_train_promote,
+                model__sample_weight=classifier_sample_weights,
+            )
+            promote_pred = promote_classifier.predict(gold_test_promote.loc[:, promote_feature_columns])
+            if hasattr(promote_classifier.named_steps["model"], "predict_proba"):
+                promote_proba_matrix = promote_classifier.predict_proba(gold_test_promote.loc[:, promote_feature_columns])
+                promote_class_labels = promote_classifier.named_steps["model"].classes_.tolist()
+                if "promote" in promote_class_labels:
+                    promote_prob = promote_proba_matrix[:, promote_class_labels.index("promote")]
+                else:
+                    promote_prob = np.zeros(len(gold_test_promote), dtype=float)
+            else:
+                promote_prob = np.where(pd.Series(promote_pred).eq("promote"), 1.0, 0.0)
+            predictions_promote_probability = promote_prob
+            promote_metrics = {
+                "trained": True,
+                "numeric_features": promote_numeric_features,
+                "categorical_features": promote_categorical_features,
+                "label_counts_train": pd.Series(y_train_promote).value_counts().to_dict(),
+                "label_counts_test": pd.Series(y_test_promote).value_counts().to_dict(),
+                "accuracy": float(accuracy_score(y_test_promote, promote_pred)),
+                "balanced_accuracy": float(balanced_accuracy_score(y_test_promote, promote_pred)),
+                "macro_f1": float(f1_score(y_test_promote, promote_pred, average="macro")),
+            }
+        else:
+            predictions_promote_probability = np.full(len(gold_test), np.nan)
+            promote_metrics = {
+                "trained": False,
+                "reason": "not_enough_promote_label_diversity",
+                "numeric_features": promote_numeric_features,
+                "categorical_features": promote_categorical_features,
+                "label_counts_train": pd.Series(y_train_promote).value_counts().to_dict(),
+            }
+    else:
+        predictions_promote_probability = np.full(len(gold_test), np.nan)
+
     _log("[step1] generating predictions and metrics")
     cls_pred = classifier.predict(x_test)
     reg_pred = regressor.predict(x_test)
@@ -387,11 +538,15 @@ def train_step1_baseline(
     predictions = gold_test.loc[:, ["pair_id", "prestwick_id", "nt_code", "effect_label", "binary_effect_label", "effect_score"]].copy()
     predictions["predicted_effect_label"] = cls_pred
     predictions["predicted_effect_score"] = reg_pred
+    if enable_promote_head:
+        predictions["predicted_promote_probability"] = predictions_promote_probability
     predictions.to_csv(output_dir / "predictions.csv", index=False)
 
     _log("[step1] saving trained artifacts")
     dump(classifier, output_dir / "classifier.joblib")
     dump(regressor, output_dir / "regressor.joblib")
+    if promote_classifier is not None:
+        dump(promote_classifier, output_dir / "promote_classifier.joblib")
 
     summary = {
         "model": "ExtraTrees",
@@ -403,9 +558,11 @@ def train_step1_baseline(
         "n_train_silver": int(0 if silver_frame is None else len(silver_frame)),
         "n_test_gold": int(len(test_idx)),
         "silver_table_path": None if silver_table_path is None else str(silver_table_path),
+        "promote_feature_table_path": None if promote_feature_table_path is None else str(promote_feature_table_path),
         "source_weight_map": _normalize_source_weight_map(source_weight_map),
         "default_gold_weight": float(default_gold_weight),
         "default_silver_weight": float(default_silver_weight),
+        "enable_promote_head": bool(enable_promote_head),
         "sample_weight_summary": {
             "min": float(classifier_sample_weights.min()),
             "max": float(classifier_sample_weights.max()),
@@ -416,6 +573,8 @@ def train_step1_baseline(
         "classification": cls_metrics,
         "regression": reg_metrics,
     }
+    if promote_metrics is not None:
+        summary["promote_auxiliary"] = promote_metrics
 
     (output_dir / "metrics.json").write_text(
         json.dumps(summary, indent=2, ensure_ascii=False),

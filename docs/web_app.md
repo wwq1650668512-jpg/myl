@@ -42,6 +42,7 @@
 - 查看该 pair 的 `predicted_effect_label`、`inhibit probability`、`effect_score`；
 - 查看该药物在全部微生物上的影响强度条形图；
 - 查看该药物下 Top 影响微生物表。
+- Step 1 结果会附带现实性约束元数据（例如 `step1_drug_profile`、`step1_constraint_applied`），用于解释为何某些药物不会被判成“无差别强抑制”。
 
 ### Step 2
 
@@ -58,6 +59,19 @@
 - 查看健康指数、母药保留、开发评分轨迹；
 - 对比全部内置场景；
 - 查看 Top 微生物变化表。
+
+### 机制层 + 疾病候选
+
+新药预测会返回 `candidate_diseases`，每个疾病条目同时包含：
+
+- 原始菌层分：`disease_score_raw_only`
+- 机制融合分：`disease_score_mechanism`
+- 机制细分分量：`mechanism_scores`（如 `butyrate_support_score`、`barrier_protection_score`、`toxin_risk_score` 等）
+- 融合模式标记：`fusion_mode`（服务默认 `weighted_0.65_0.35`）
+- 机制证据：`mechanism_top_contributors`、`evidence_examples`
+
+说明：当前 Web 默认返回“服务内置融合模式”的结果。  
+固定 case 的多融合模式对比（`raw_only / mechanism_only / weighted_0.3_0.7`）由离线脚本产出，详见下方“评估脚本”。
 
 ## 数据来源
 
@@ -76,6 +90,19 @@
 
 - 库内药物不需要重新训练模型，就能直接查询和模拟；
 - 新药 SMILES 也不需要网页端训练，只是调用已经训练好的模型做实时推理。
+
+## 疾病目录与候选空间更新
+
+为避免功能性肠病候选缺失，服务启动时会对疾病参考表执行标准化与扩展：
+
+- 统一疾病命名（含 IBS 别名归一）
+- 强制保证以下候选在目录中可见：
+  - `肠易激综合征（IBS）`
+  - `肠易激综合征-腹泻型（IBS-D）`
+  - `肠易激综合征-便秘型（IBS-C）`
+- 当参考表中仅有 IBS 基线条目时，自动扩展生成 IBS-D / IBS-C 候选覆盖
+
+实现位置：[service.py](../src/gut_drug_microbiome/web/service.py)
 
 ## 运行方式
 
@@ -115,9 +142,34 @@ http://127.0.0.1:8080
 }
 ```
 
+返回体中的 `profile.aggregated` 还会包含跨菌群聚合指标，例如：
+
+- `step1_counts`
+- `mean_predicted_effect_score`
+- `mean_predicted_inhibit_probability`
+- `candidate_diseases`
+
 ## 说明边界
 
 - Step 1 与 Step 2 的模型仍然是离线训练好的；网页做的是实时推理，不是网页端再训练。
 - Step 3 是实时调用现有模拟器，因此是动态的。
 - 库内药物查询与新药 SMILES 预测现在都统一到现成 83 菌扩展面板。
 - 新药输入支持任意合法 SMILES，但预测可信度仍然受当前 applicability 范围限制。
+
+## 评估脚本（离线）
+
+机制层行为对比与 case-based benchmark 在离线脚本中运行：
+
+- [run_fusion_comparison.py](../scripts/run_fusion_comparison.py)
+- [evaluate_case_based_sanity_benchmark.py](../scripts/evaluate_case_based_sanity_benchmark.py)
+- [build_revised_case_outputs.py](../scripts/build_revised_case_outputs.py)
+
+主要输出目录：
+
+- `predictions/evaluation/fusion_comparison/`
+  - `rifaximin.csv`, `vancomycin.csv`, `lubiprostone.csv`, `metronidazole.csv`
+  - `sanity_summary.csv`
+  - `ranking_benchmark_summary.csv`
+  - `ecology_benchmark_summary.csv`
+  - `revised_case_based_results.csv`
+  - `revised_case_based_summary.md`

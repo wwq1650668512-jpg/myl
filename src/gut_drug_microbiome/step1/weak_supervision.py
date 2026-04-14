@@ -647,3 +647,256 @@ def build_masi_silver_table(
     }
     _write_manifest(output_dir / "step1_silver_masi_summary.json", summary)
     return summary
+
+
+def build_promote_literature_silver_table(
+    input_path: str | Path,
+    output_dir: str | Path,
+) -> dict:
+    """Convert the manually curated promote literature seed table into a Step 1 silver table.
+
+    Args:
+        input_path: Normalized literature seed table path.
+        output_dir: Directory where the silver CSV and summary are written.
+
+    Returns:
+        A summary dictionary with label counts and output paths.
+    """
+    input_path = Path(input_path)
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    seed = pd.read_csv(input_path, low_memory=False)
+    silver = seed.copy()
+
+    silver["pair_id"] = silver["record_id"].astype(str)
+    silver["source_dataset"] = "promote_literature"
+    silver["label_tier"] = "silver"
+    silver["source_record_id"] = silver["record_id"]
+    silver["effect_label"] = silver["effect_direction"]
+    silver["binary_effect_label"] = silver["effect_label"].where(silver["effect_label"].eq("inhibit"), "no_effect")
+    silver["effect_score"] = pd.to_numeric(silver["effect_score_proxy"], errors="coerce")
+    silver["chemical_name"] = silver["compound_name_raw"]
+    silver["main_component_smiles"] = silver.get("smiles")
+    silver["canonical_smiles"] = silver.get("canonical_smiles_rdkit")
+    silver["molecular_formula"] = silver.get("rdkit_formula")
+    silver["molecular_weight"] = pd.to_numeric(silver.get("rdkit_exact_mol_wt"), errors="coerce")
+    silver["xlogp"] = pd.to_numeric(silver.get("rdkit_logp"), errors="coerce")
+    silver["tpsa"] = pd.to_numeric(silver.get("rdkit_tpsa"), errors="coerce")
+    silver["species_label"] = silver["microbe_label_normalized"]
+    silver["target_species"] = "human"
+    silver["human_use"] = True
+    silver["veterinary"] = False
+    silver["supporting_text"] = silver["notes"]
+    silver["reference_pubmed_id"] = silver["source_pmid"]
+    silver["experimental_system"] = silver["culture_context"]
+    silver["experimental_organism"] = "literature_curated"
+    silver["experimental_disease_condition"] = np.nan
+    silver["substance_scope"] = "literature_seed"
+    silver["effect_strength"] = silver["effect_score_proxy_type"]
+    silver["microbe_change_statistics"] = np.nan
+    silver["effect_on_microbe"] = silver["effect_direction"]
+    silver["microbiota_site"] = "Gut"
+    silver["substance_category"] = "literature_curated"
+    silver["substance_subcategory"] = silver["effect_type"]
+    silver["supporting_microbe"] = silver["supporting_microbe"]
+    silver["evidence_level"] = silver["evidence_level"]
+    silver["strain_label"] = silver["strain_label"]
+    silver["compound_name_normalized"] = silver["compound_name_normalized"]
+    silver["effect_type"] = silver["effect_type"]
+    silver["promote_evidence_type"] = silver["effect_type"]
+    silver["effect_score_proxy_type"] = silver["effect_score_proxy_type"]
+
+    columns_to_keep = [
+        "pair_id",
+        "source_dataset",
+        "label_tier",
+        "source_record_id",
+        "effect_label",
+        "binary_effect_label",
+        "effect_score",
+        "record_id",
+        "chemical_name",
+        "compound_name_normalized",
+        "smiles",
+        "main_component_smiles",
+        "canonical_smiles",
+        "inchikey",
+        "molecular_formula",
+        "molecular_weight",
+        "xlogp",
+        "tpsa",
+        "species_label",
+        "microbe_name_raw",
+        "microbe_label_normalized",
+        "strain_label",
+        "target_species",
+        "human_use",
+        "veterinary",
+        "effect_type",
+        "promote_evidence_type",
+        "effect_score_proxy",
+        "effect_score_proxy_type",
+        "dose_value",
+        "dose_unit",
+        "culture_context",
+        "supporting_microbe",
+        "reference_pubmed_id",
+        "source_title",
+        "evidence_level",
+        "substance_scope",
+        "effect_strength",
+        "microbe_change_statistics",
+        "effect_on_microbe",
+        "experimental_system",
+        "experimental_organism",
+        "experimental_disease_condition",
+        "microbiota_site",
+        "substance_category",
+        "substance_subcategory",
+        "supporting_text",
+        "notes",
+    ]
+    rdkit_columns = [
+        column
+        for column in silver.columns
+        if column.startswith("rdkit_") or column.startswith("morgan_fp_") or column == "murcko_scaffold"
+    ]
+    existing_columns = [column for column in columns_to_keep if column in silver.columns]
+    silver = silver.loc[:, existing_columns + sorted(rdkit_columns)].copy()
+
+    output_path = output_dir / "step1_silver_promote_literature.csv"
+    silver.to_csv(output_path, index=False)
+
+    summary = {
+        "input_path": str(input_path),
+        "output_path": str(output_path),
+        "n_records": int(len(silver)),
+        "label_counts": {key: int(value) for key, value in silver["effect_label"].value_counts().to_dict().items()},
+        "effect_type_counts": {
+            str(key): int(value)
+            for key, value in silver["effect_type"].fillna("missing").value_counts().to_dict().items()
+        },
+        "evidence_level_counts": {
+            str(key): int(value)
+            for key, value in silver["evidence_level"].fillna("missing").value_counts().to_dict().items()
+        },
+        "n_rows_with_smiles": int(silver["smiles"].notna().sum()) if "smiles" in silver.columns else 0,
+        "n_rows_with_valid_rdkit_smiles": int(
+            pd.to_numeric(silver.get("rdkit_valid_smiles"), errors="coerce").fillna(0).astype(bool).sum()
+        ),
+    }
+    _write_manifest(output_dir / "step1_silver_promote_literature_summary.json", summary)
+    return summary
+
+
+def build_cross_feeding_reference_table(
+    input_path: str | Path,
+    output_path: str | Path,
+    extra_input_path: str | Path | None = None,
+) -> dict[str, object]:
+    """Build a compact cross-feeding reference table from curated promote literature seeds."""
+    input_path = Path(input_path)
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    seed = pd.read_csv(input_path, low_memory=False)
+    reference = seed.copy()
+    reference = reference.loc[
+        reference["effect_type"].fillna("").eq("metabolism_supported_promote")
+        & reference["supporting_microbe"].fillna("").astype(str).str.strip().ne("")
+    ].copy()
+
+    if reference.empty:
+        output = pd.DataFrame(
+            columns=[
+                "reference_id",
+                "compound_name_raw",
+                "compound_name_normalized",
+                "compound_aliases",
+                "compound_family",
+                "match_keywords",
+                "consumer_microbe_name_raw",
+                "consumer_microbe_label",
+                "producer_microbe_label",
+                "evidence_type",
+                "culture_context",
+                "source_pmid",
+                "source_title",
+                "evidence_level",
+                "notes",
+            ]
+        )
+    else:
+        output = pd.DataFrame(
+            {
+                "reference_id": reference["record_id"],
+                "compound_name_raw": reference["compound_name_raw"],
+                "compound_name_normalized": reference["compound_name_normalized"],
+                "compound_aliases": np.nan,
+                "compound_family": np.nan,
+                "match_keywords": np.nan,
+                "consumer_microbe_name_raw": reference["microbe_name_raw"],
+                "consumer_microbe_label": reference["microbe_label_normalized"],
+                "producer_microbe_label": reference["supporting_microbe"],
+                "evidence_type": "cross_feeding_supported_promote",
+                "culture_context": reference["culture_context"],
+                "source_pmid": pd.to_numeric(reference["source_pmid"], errors="coerce").astype("Int64"),
+                "source_title": reference["source_title"],
+                "evidence_level": reference["evidence_level"],
+                "notes": reference["notes"],
+            }
+        )
+
+    if extra_input_path is not None:
+        extra_input_path = Path(extra_input_path)
+        if extra_input_path.exists():
+            manual = pd.read_csv(extra_input_path, low_memory=False)
+            expected_columns = [
+                "reference_id",
+                "compound_name_raw",
+                "compound_name_normalized",
+                "compound_aliases",
+                "compound_family",
+                "match_keywords",
+                "consumer_microbe_name_raw",
+                "consumer_microbe_label",
+                "producer_microbe_label",
+                "evidence_type",
+                "culture_context",
+                "source_pmid",
+                "source_title",
+                "evidence_level",
+                "notes",
+            ]
+            for column in expected_columns:
+                if column not in manual.columns:
+                    manual[column] = np.nan
+            manual = manual.loc[:, expected_columns].copy()
+            output = pd.concat([output, manual], ignore_index=True)
+
+    output["compound_name_normalized"] = output["compound_name_normalized"].fillna("").astype(str).str.strip()
+    output["consumer_microbe_label"] = output["consumer_microbe_label"].fillna("").astype(str).str.strip()
+    output["producer_microbe_label"] = output["producer_microbe_label"].fillna("").astype(str).str.strip()
+    output = output.drop_duplicates(
+        subset=["compound_name_normalized", "consumer_microbe_label", "producer_microbe_label"],
+        keep="last",
+    ).copy()
+
+    output.to_csv(output_path, index=False)
+    summary = {
+        "input_path": str(input_path),
+        "output_path": str(output_path),
+        "extra_input_path": str(extra_input_path) if extra_input_path is not None else None,
+        "n_rows": int(len(output)),
+        "n_unique_consumers": int(output["consumer_microbe_label"].nunique()) if "consumer_microbe_label" in output.columns else 0,
+        "n_unique_producers": int(output["producer_microbe_label"].nunique()) if "producer_microbe_label" in output.columns else 0,
+        "evidence_level_counts": {
+            str(key): int(value)
+            for key, value in output["evidence_level"].fillna("missing").value_counts().to_dict().items()
+        }
+        if "evidence_level" in output.columns
+        else {},
+    }
+    _write_manifest(output_path.with_suffix(".summary.json"), summary)
+    return summary

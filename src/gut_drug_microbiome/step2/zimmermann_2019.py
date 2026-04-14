@@ -10,24 +10,12 @@ import numpy as np
 import pandas as pd
 
 from gut_drug_microbiome.step1.chem_features import enrich_drug_table_with_rdkit
+from gut_drug_microbiome.utils.text import canonicalize_key as _canonicalize_key
+from gut_drug_microbiome.utils.text import normalize_whitespace as _canonicalize_whitespace
 
 
 SOURCE_DATASET = "zimmermann_2019"
 CONTROL_HEADERS = {"Control pH 7", "Control pH 6", "Control pH 5", "Control pH 4"}
-
-
-def _canonicalize_whitespace(value: object) -> str:
-    """Collapse repeated whitespace and strip a raw text value."""
-    if pd.isna(value):
-        return ""
-    return re.sub(r"\s+", " ", str(value).strip())
-
-
-def _canonicalize_key(value: object) -> str:
-    """Build a lowercase alphanumeric matching key from free text."""
-    text = _canonicalize_whitespace(value).lower()
-    return re.sub(r"[^a-z0-9]+", "", text)
-
 
 def _snake_case(value: object) -> str:
     """Convert a raw spreadsheet header into a normalized snake_case field name."""
