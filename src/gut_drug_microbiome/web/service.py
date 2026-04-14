@@ -9,13 +9,22 @@ import numpy as np
 import pandas as pd
 
 from gut_drug_microbiome.amr import AmrRuleEngine
+from gut_drug_microbiome.disease_knowledge import build_disease_adjusted_community
+from gut_drug_microbiome.mechanism_layer import attach_action_signals
+from gut_drug_microbiome.mechanism_layer import compute_mechanism_layer
+from gut_drug_microbiome.mechanism_layer import fuse_disease_scores
+from gut_drug_microbiome.mechanism_layer import infer_microbe_trait_priors
+from gut_drug_microbiome.step1 import annotate_compound_semantics
 from gut_drug_microbiome.step1 import predict_step1_hybrid
+from gut_drug_microbiome.step1 import refine_step1_promote_with_step2
 from gut_drug_microbiome.step1.chem_features import enrich_drug_table_with_rdkit
+from gut_drug_microbiome.step2 import Step2MechanismProjector
 from gut_drug_microbiome.step2 import build_step2_input_tables
 from gut_drug_microbiome.step2 import predict_step2_baseline
-from gut_drug_microbiome.step2 import Step2MechanismProjector
 from gut_drug_microbiome.step3 import BUILTIN_SCENARIOS
 from gut_drug_microbiome.step3 import run_step3_simulation
+from gut_drug_microbiome.utils.chem import compute_smiles_descriptors as _compute_smiles_descriptors
+from gut_drug_microbiome.utils.text import canonicalize_key as _canonicalize_key
 
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -33,6 +42,13 @@ DEFAULT_STEP1_CHEMPROP_PREPARE_DIR = ROOT / "data/processed/step1/chemprop_scaff
 DEFAULT_STEP1_CHEMPROP_MODEL_PATH = ROOT / "models/step1/chemprop_scaffold_classification_v1/model_0/best.pt"
 DEFAULT_STEP1_REGRESSOR_PATH = ROOT / "models/step1/gold_scaffold_split_rdkit_40/regressor.joblib"
 DEFAULT_STEP1_REGRESSOR_METRICS_PATH = ROOT / "models/step1/gold_scaffold_split_rdkit_40/metrics.json"
+DEFAULT_STEP1_PROMOTE_CLASSIFIER_PATH = (
+    ROOT / "models/step1/promote_aux_scaffold_mdipid_plus_promote_literature_v2_40/promote_classifier.joblib"
+)
+DEFAULT_STEP1_PROMOTE_METRICS_PATH = (
+    ROOT / "models/step1/promote_aux_scaffold_mdipid_plus_promote_literature_v2_40/metrics.json"
+)
+DEFAULT_CROSS_FEEDING_REFERENCE_PATH = ROOT / "data/reference/cross_feeding_edges.csv"
 DEFAULT_STEP2_CLASSIFIER_PATH = ROOT / "models/step2/zimmermann_scaffold_split/classifier_full.joblib"
 DEFAULT_STEP2_REGRESSOR_PATH = ROOT / "models/step2/zimmermann_scaffold_split/regressor_full.joblib"
 DEFAULT_STEP2_METRICS_PATH = ROOT / "models/step2/zimmermann_scaffold_split/metrics.json"
@@ -40,6 +56,14 @@ DEFAULT_STEP2_APPLICABILITY_REFERENCE_PATH = ROOT / "models/step2/zimmermann_sca
 DEFAULT_STEP2_MECHANISM_REFERENCE_PATH = ROOT / "models/step2/zimmermann_scaffold_split/mechanism_reference.joblib"
 DEFAULT_STEP3_COHORT_ROOT = ROOT / "data/processed/step3/cohorts"
 DEFAULT_STEP3_HEALTH_SIGNATURE_PROXY_PATH = ROOT / "data/processed/health_signature/microbe_tcg_proxy_mapping.csv"
+DEFAULT_DISEASE_MICROBE_REFERENCE_PATH = ROOT / "data/reference/disease_microbe_dictionary.csv"
+DEFAULT_DISEASE_DRUG_REFERENCE_PATH = ROOT / "data/reference/disease_marketed_drug_catalog.csv"
+
+REQUIRED_DISEASE_CATALOG_ENTRIES = [
+    "肠易激综合征（IBS）",
+    "肠易激综合征-腹泻型（IBS-D）",
+    "肠易激综合征-便秘型（IBS-C）",
+]
 
 DESIRED_COLUMNS = [
     "pair_id",
@@ -80,6 +104,19 @@ DESIRED_COLUMNS = [
     "predicted_effect_score",
     "predicted_effect_label_hybrid",
     "predicted_effect_magnitude",
+    "predicted_promote_probability_base",
+    "predicted_promote_probability_refined",
+    "predicted_promote_support_score",
+    "predicted_promote_support_type",
+    "predicted_promote_evidence_type",
+    "predicted_cross_feeding_reference_flag",
+    "predicted_cross_feeding_support_microbe",
+    "predicted_cross_feeding_reference_pmid",
+    "predicted_cross_feeding_evidence_level",
+    "predicted_cross_feeding_match_mode",
+    "predicted_cross_feeding_matched_term",
+    "predicted_effect_label_step2_refined",
+    "predicted_effect_label_step2_refined_changed",
     "predicted_metabolized_probability",
     "predicted_metabolism_label",
     "predicted_parent_depletion_fraction",
@@ -99,9 +136,19 @@ DESIRED_COLUMNS = [
     "predicted_candidate_product_count",
     "predicted_evidence_gene_ids",
     "predicted_evidence_gene_count",
+    "predicted_enzyme_prior_flag",
+    "predicted_enzyme_match_count",
+    "predicted_enzyme_ids",
+    "predicted_enzyme_names",
+    "predicted_enzyme_reaction_classes",
+    "predicted_enzyme_bond_targets",
+    "predicted_enzyme_presence_score",
+    "predicted_enzyme_support_score",
+    "predicted_enzyme_step1_promote_support_score",
+    "predicted_enzyme_step1_inhibit_risk_score",
 ]
 
-STEP1_LABEL_CANDIDATES = ["step1_predicted_effect_label_hybrid", "predicted_effect_label_hybrid"]
+STEP1_LABEL_CANDIDATES = ["predicted_effect_label_step2_refined", "step1_predicted_effect_label_hybrid", "predicted_effect_label_hybrid"]
 STEP1_BINARY_CANDIDATES = ["step1_predicted_binary_effect_label", "predicted_binary_effect_label"]
 STEP1_PROBABILITY_CANDIDATES = ["step1_predicted_inhibit_probability", "predicted_inhibit_probability"]
 STEP1_SCORE_CANDIDATES = ["step1_predicted_effect_score", "predicted_effect_score"]
@@ -109,14 +156,6 @@ STEP1_MAGNITUDE_CANDIDATES = ["step1_predicted_effect_magnitude", "predicted_eff
 STEP1_OBSERVED_LABEL_CANDIDATES = ["step1_observed_effect_label", "effect_label"]
 STEP1_OBSERVED_BINARY_CANDIDATES = ["step1_observed_binary_effect_label", "binary_effect_label"]
 STEP1_OBSERVED_SCORE_CANDIDATES = ["step1_observed_effect_score", "effect_score"]
-
-
-def _canonicalize_key(value: object) -> str:
-    if pd.isna(value):
-        return ""
-    text = str(value).strip().lower()
-    return "".join(character for character in text if character.isalnum())
-
 
 def _pick_column(frame: pd.DataFrame, candidates: list[str]) -> str | None:
     for candidate in candidates:
@@ -175,41 +214,6 @@ def _existing_usecols(path: Path, desired: list[str]) -> list[str]:
     return [column for column in desired if column in columns]
 
 
-def _count_smiles_feature(smiles: object, token: str) -> float:
-    if not isinstance(smiles, str) or not smiles:
-        return math.nan
-    return float(smiles.count(token))
-
-
-def _compute_smiles_descriptors(frame: pd.DataFrame) -> pd.DataFrame:
-    smiles = frame["main_component_smiles"].fillna(frame.get("smiles"))
-    result = frame.copy()
-    result["smiles_length"] = smiles.apply(lambda value: float(len(value)) if isinstance(value, str) else math.nan)
-    result["smiles_uppercase_count"] = smiles.apply(
-        lambda value: float(sum(1 for char in value if char.isalpha() and char.isupper()))
-        if isinstance(value, str)
-        else math.nan
-    )
-    result["smiles_ring_index_count"] = smiles.apply(
-        lambda value: float(sum(1 for char in value if char.isdigit()))
-        if isinstance(value, str)
-        else math.nan
-    )
-    result["smiles_branch_count"] = smiles.apply(lambda value: _count_smiles_feature(value, "("))
-    result["smiles_double_bond_count"] = smiles.apply(lambda value: _count_smiles_feature(value, "="))
-    result["smiles_halogen_count"] = smiles.apply(
-        lambda value: (
-            _count_smiles_feature(value, "Cl")
-            + _count_smiles_feature(value, "Br")
-            + _count_smiles_feature(value, "F")
-            + _count_smiles_feature(value, "I")
-        )
-        if isinstance(value, str)
-        else math.nan
-    )
-    return result
-
-
 class GutPredictionService:
     def __init__(
         self,
@@ -221,6 +225,9 @@ class GutPredictionService:
         step1_chemprop_model_path: str | Path = DEFAULT_STEP1_CHEMPROP_MODEL_PATH,
         step1_regressor_path: str | Path = DEFAULT_STEP1_REGRESSOR_PATH,
         step1_regressor_metrics_path: str | Path = DEFAULT_STEP1_REGRESSOR_METRICS_PATH,
+        step1_promote_classifier_path: str | Path | None = DEFAULT_STEP1_PROMOTE_CLASSIFIER_PATH,
+        step1_promote_metrics_path: str | Path | None = DEFAULT_STEP1_PROMOTE_METRICS_PATH,
+        cross_feeding_reference_path: str | Path | None = DEFAULT_CROSS_FEEDING_REFERENCE_PATH,
         step2_classifier_path: str | Path = DEFAULT_STEP2_CLASSIFIER_PATH,
         step2_regressor_path: str | Path = DEFAULT_STEP2_REGRESSOR_PATH,
         step2_metrics_path: str | Path = DEFAULT_STEP2_METRICS_PATH,
@@ -228,6 +235,8 @@ class GutPredictionService:
         step2_mechanism_reference_path: str | Path = DEFAULT_STEP2_MECHANISM_REFERENCE_PATH,
         step3_cohort_root: str | Path = DEFAULT_STEP3_COHORT_ROOT,
         step3_health_signature_proxy_path: str | Path = DEFAULT_STEP3_HEALTH_SIGNATURE_PROXY_PATH,
+        disease_microbe_reference_path: str | Path | None = DEFAULT_DISEASE_MICROBE_REFERENCE_PATH,
+        disease_drug_reference_path: str | Path | None = DEFAULT_DISEASE_DRUG_REFERENCE_PATH,
     ) -> None:
         self.integrated_predictions_path = Path(integrated_predictions_path)
         self.demo_ranking_path = None if demo_ranking_path is None else Path(demo_ranking_path)
@@ -238,6 +247,13 @@ class GutPredictionService:
         self.step1_chemprop_model_path = Path(step1_chemprop_model_path)
         self.step1_regressor_path = Path(step1_regressor_path)
         self.step1_regressor_metrics_path = Path(step1_regressor_metrics_path)
+        self.step1_promote_classifier_path = (
+            None if step1_promote_classifier_path is None else Path(step1_promote_classifier_path)
+        )
+        self.step1_promote_metrics_path = None if step1_promote_metrics_path is None else Path(step1_promote_metrics_path)
+        self.cross_feeding_reference_path = (
+            None if cross_feeding_reference_path is None else Path(cross_feeding_reference_path)
+        )
         self.step2_classifier_path = Path(step2_classifier_path)
         self.step2_regressor_path = Path(step2_regressor_path)
         self.step2_metrics_path = Path(step2_metrics_path)
@@ -245,9 +261,19 @@ class GutPredictionService:
         self.step2_mechanism_reference_path = Path(step2_mechanism_reference_path)
         self.step3_cohort_root = Path(step3_cohort_root)
         self.step3_health_signature_proxy_path = Path(step3_health_signature_proxy_path)
+        self.disease_microbe_reference_path = (
+            None if disease_microbe_reference_path is None else Path(disease_microbe_reference_path)
+        )
+        self.disease_drug_reference_path = None if disease_drug_reference_path is None else Path(disease_drug_reference_path)
 
         usecols = _existing_usecols(self.integrated_predictions_path, DESIRED_COLUMNS)
         self.frame = pd.read_csv(self.integrated_predictions_path, usecols=usecols, low_memory=False)
+        self.frame = refine_step1_promote_with_step2(
+            self.frame,
+            promote_classifier_path=self.step1_promote_classifier_path,
+            promote_metrics_path=self.step1_promote_metrics_path,
+            cross_feeding_reference_path=self.cross_feeding_reference_path,
+        )
         self.frame["drug_search_key"] = self.frame["prestwick_id"].map(_canonicalize_key)
         self.frame["drug_name_key"] = self.frame["chemical_name"].map(_canonicalize_key)
         self.frame["microbe_search_key"] = self.frame["nt_code"].map(_canonicalize_key)
@@ -354,7 +380,55 @@ class GutPredictionService:
         self.step2_mechanism_projector = Step2MechanismProjector.from_joblib(self.step2_mechanism_reference_path)
         self.cohort_communities = self._discover_cohort_communities()
         self.demo_ranking = self._load_demo_ranking()
+        self.disease_microbe_reference = self._load_optional_reference(self.disease_microbe_reference_path)
+        self.disease_drug_reference = self._load_optional_reference(self.disease_drug_reference_path)
+        self.disease_catalog = self._build_disease_catalog()
         self.custom_sessions: dict[str, dict[str, object]] = {}
+
+    def _load_optional_reference(self, path: Path | None) -> pd.DataFrame:
+        """Load an optional CSV reference table, returning an empty frame when unavailable."""
+        if path is None or not path.exists():
+            return pd.DataFrame()
+        return pd.read_csv(path, low_memory=False)
+
+    def _build_disease_catalog(self) -> list[dict[str, object]]:
+        """Summarize the loaded disease references for bootstrap and UI dropdowns."""
+        disease_names: set[str] = set()
+        if not self.disease_microbe_reference.empty and "disease_name" in self.disease_microbe_reference.columns:
+            disease_names |= {
+                str(value).strip()
+                for value in self.disease_microbe_reference["disease_name"].dropna().astype(str).tolist()
+                if str(value).strip()
+            }
+        if not self.disease_drug_reference.empty and "disease_name" in self.disease_drug_reference.columns:
+            disease_names |= {
+                str(value).strip()
+                for value in self.disease_drug_reference["disease_name"].dropna().astype(str).tolist()
+                if str(value).strip()
+            }
+
+        catalog: list[dict[str, object]] = []
+        for disease_name in sorted(disease_names):
+            disease_key = _canonicalize_key(disease_name)
+            microbe_count = 0
+            if not self.disease_microbe_reference.empty:
+                microbe_count = int(
+                    self.disease_microbe_reference["disease_name"].map(_canonicalize_key).eq(disease_key).sum()
+                )
+            marketed_count = 0
+            if not self.disease_drug_reference.empty:
+                marketed_count = int(
+                    self.disease_drug_reference["disease_name"].map(_canonicalize_key).eq(disease_key).sum()
+                )
+            catalog.append(
+                {
+                    "disease_name": disease_name,
+                    "disease_key": disease_key,
+                    "microbe_relation_count": microbe_count,
+                    "marketed_drug_count": marketed_count,
+                }
+            )
+        return catalog
 
     def _load_demo_ranking(self) -> list[dict[str, object]]:
         if self.demo_ranking_path is None or not self.demo_ranking_path.exists():
@@ -541,8 +615,219 @@ class GutPredictionService:
             }
         )
 
+    def _marketed_disease_context(self, drug_name: str | None) -> list[dict[str, object]]:
+        """Return marketed-disease context rows matching the current drug name when possible."""
+        if not drug_name or self.disease_drug_reference.empty:
+            return []
+        drug_key = _canonicalize_key(drug_name)
+        if not drug_key:
+            return []
+
+        matched = self.disease_drug_reference[
+            self.disease_drug_reference["marketed_drug_key"].map(str).eq(drug_key)
+        ].copy()
+        if matched.empty:
+            matched = self.disease_drug_reference[
+                self.disease_drug_reference["marketed_drug_name_raw"]
+                .astype(str)
+                .str.contains(str(drug_name), case=False, na=False, regex=False)
+            ].copy()
+        if matched.empty:
+            return []
+
+        grouped = (
+            matched.groupby("disease_name", dropna=False)["marketed_drug_name_raw"]
+            .apply(lambda series: sorted({str(value).strip() for value in series if str(value).strip()}))
+            .reset_index()
+        )
+        return [
+            {
+                "disease_name": row["disease_name"],
+                "matched_market_drugs": row["marketed_drug_name_raw"][:5],
+            }
+            for _, row in grouped.iterrows()
+        ]
+
+    def _match_disease_relation(self, work: pd.DataFrame, relation: pd.Series) -> pd.Series:
+        """Match one disease relation row onto the currently available microbe panel."""
+        taxon_level = str(relation.get("taxon_level", "unknown"))
+        microbe_key = _canonicalize_key(relation.get("microbe_name_raw"))
+        genus_hint = _canonicalize_key(relation.get("genus_hint"))
+        if taxon_level == "species":
+            return work["species_label"].map(_canonicalize_key).eq(microbe_key) | work["microbe_label"].map(_canonicalize_key).eq(microbe_key)
+        if taxon_level == "genus":
+            return work["genus"].map(_canonicalize_key).eq(genus_hint or microbe_key)
+        if taxon_level == "family":
+            return work["family"].map(_canonicalize_key).eq(microbe_key)
+        if taxon_level == "phylum":
+            return work["phylum"].map(_canonicalize_key).eq(microbe_key)
+        if taxon_level == "class":
+            return work["class"].map(_canonicalize_key).eq(microbe_key) if "class" in work.columns else pd.Series(False, index=work.index)
+        if taxon_level == "order":
+            return work["order"].map(_canonicalize_key).eq(microbe_key) if "order" in work.columns else pd.Series(False, index=work.index)
+        return work["genus"].map(_canonicalize_key).eq(genus_hint) if genus_hint else pd.Series(False, index=work.index)
+
+    def _candidate_diseases_from_frame(self, work: pd.DataFrame) -> list[dict[str, object]]:
+        """Score diseases whose curated microbe patterns are directionally consistent with Step 1 outputs."""
+        if self.disease_microbe_reference.empty:
+            return []
+
+        disease_records: list[dict[str, object]] = []
+        level_weights = {"species": 1.0, "genus": 0.75, "family": 0.45, "phylum": 0.30, "class": 0.25, "order": 0.25}
+        source_weights = {"microbe_to_disease": 1.0, "disease_to_microbe": 0.7}
+        score_series = pd.to_numeric(
+            work.get("display_step1_predicted_effect_score", work.get(self.step1_score_column, pd.Series(np.nan, index=work.index))),
+            errors="coerce",
+        )
+        inhibit_series = pd.to_numeric(
+            work.get(
+                "display_step1_predicted_inhibit_probability",
+                work.get(self.step1_probability_column, pd.Series(np.nan, index=work.index)),
+            ),
+            errors="coerce",
+        )
+        promote_series = pd.to_numeric(
+            work.get("predicted_promote_probability_refined", pd.Series(np.nan, index=work.index)),
+            errors="coerce",
+        )
+        mechanism_work = attach_action_signals(
+            infer_microbe_trait_priors(work),
+            score_column="display_step1_predicted_effect_score"
+            if "display_step1_predicted_effect_score" in work.columns
+            else (self.step1_score_column or "predicted_effect_score"),
+            inhibit_probability_column="display_step1_predicted_inhibit_probability"
+            if "display_step1_predicted_inhibit_probability" in work.columns
+            else (self.step1_probability_column or "predicted_inhibit_probability"),
+            promote_probability_column="predicted_promote_probability_refined",
+        )
+
+        for disease_name, group in self.disease_microbe_reference.groupby("disease_name", dropna=False):
+            relation_scores: list[float] = []
+            evidence_rows: list[dict[str, object]] = []
+            mechanism_rows: list[pd.DataFrame] = []
+            for _, relation in group.iterrows():
+                desired_effect = str(relation.get("desired_step1_effect", "unknown"))
+                if desired_effect not in {"promote", "inhibit"}:
+                    continue
+                mask = self._match_disease_relation(mechanism_work, relation)
+                matched = mechanism_work.loc[mask].copy()
+                if matched.empty:
+                    continue
+                matched_scores = score_series.loc[matched.index].fillna(0.0)
+                matched_inhibit = inhibit_series.loc[matched.index].fillna(0.0)
+                matched_promote = promote_series.loc[matched.index].fillna(0.0)
+
+                if desired_effect == "promote":
+                    local_support = matched_scores.clip(lower=0.0) + 0.75 * matched_promote
+                else:
+                    local_support = (-matched_scores).clip(lower=0.0) + 0.75 * matched_inhibit
+                relation_score = float(local_support.mean())
+                weight = level_weights.get(str(relation.get("taxon_level", "unknown")), 0.2) * source_weights.get(
+                    str(relation.get("source_sheet", "")),
+                    0.5,
+                )
+                weighted_score = relation_score * weight
+                relation_scores.append(weighted_score)
+                matched = matched.copy()
+                matched["relation_weight"] = float(weight)
+                matched["desired_step1_effect"] = desired_effect
+                mechanism_rows.append(matched)
+                strongest = matched.iloc[0]
+                evidence_rows.append(
+                    {
+                        "microbe_name_raw": relation.get("microbe_name_raw"),
+                        "desired_step1_effect": desired_effect,
+                        "matched_microbe": strongest.get("microbe_label"),
+                        "matched_effect_label": strongest.get("display_step1_predicted_effect_label", strongest.get(self.step1_label_column)),
+                        "matched_effect_score": _safe_float(strongest.get("display_step1_predicted_effect_score", strongest.get(self.step1_score_column))),
+                        "matched_promote_probability": _safe_float(strongest.get("predicted_promote_probability_refined")),
+                        "matched_inhibit_probability": _safe_float(strongest.get("display_step1_predicted_inhibit_probability", strongest.get(self.step1_probability_column))),
+                        "relation_score": round(weighted_score, 4),
+                        "taxon_level": relation.get("taxon_level"),
+                        "source_sheet": relation.get("source_sheet"),
+                    }
+                )
+
+            if not relation_scores:
+                continue
+
+            if mechanism_rows:
+                mechanism_result = compute_mechanism_layer(
+                    pd.concat(mechanism_rows, ignore_index=True),
+                    relation_weight_column="relation_weight",
+                    top_n_contributors=4,
+                )
+            else:
+                mechanism_result = compute_mechanism_layer(pd.DataFrame())
+
+            raw_microbe_score = float(np.mean(relation_scores))
+            mechanism_scores = mechanism_result["scores"]
+            mechanism_balance = float(mechanism_scores.get("mechanism_balance_score", 0.0))
+            default_fusion_mode = "weighted_0.65_0.35"
+            disease_score_mechanism = fuse_disease_scores(
+                raw_score=raw_microbe_score,
+                mechanism_score=mechanism_balance,
+                fusion_mode=default_fusion_mode,
+            )
+            marketed_examples = []
+            if not self.disease_drug_reference.empty:
+                disease_key = _canonicalize_key(disease_name)
+                marketed_examples = (
+                    self.disease_drug_reference.loc[
+                        self.disease_drug_reference["disease_name"].map(_canonicalize_key).eq(disease_key),
+                        "marketed_drug_name_raw",
+                    ]
+                    .dropna()
+                    .astype(str)
+                    .head(5)
+                    .tolist()
+                )
+            disease_records.append(
+                {
+                    "disease_name": disease_name,
+                    "support_score": round(disease_score_mechanism, 4),
+                    "disease_score_mechanism": round(disease_score_mechanism, 4),
+                    "disease_score_raw_only": round(raw_microbe_score, 4),
+                    "mechanism_delta": round(float(disease_score_mechanism - raw_microbe_score), 4),
+                    "mechanism_scores": mechanism_scores,
+                    "mechanism_top_contributors": mechanism_result["top_contributors"],
+                    "mechanism_model_version": "v1_literature_minimal_2026_04",
+                    "fusion_mode": default_fusion_mode,
+                    "matched_relation_count": int(len(relation_scores)),
+                    "matched_microbe_count": int(
+                        pd.concat(mechanism_rows, ignore_index=True)["nt_code"].nunique() if mechanism_rows else 0
+                    ),
+                    "marketed_drug_examples": marketed_examples,
+                    "evidence_examples": evidence_rows[:5],
+                }
+            )
+
+        disease_records.sort(
+            key=lambda item: (
+                item["disease_score_mechanism"],
+                item["disease_score_raw_only"],
+                item["matched_relation_count"],
+            ),
+            reverse=True,
+        )
+        return disease_records[:8]
+
+    def _write_disease_adjusted_community(self, output_path: Path, disease_name: str) -> Path:
+        """Create a temporary community table reflecting one curated disease profile."""
+        if self.disease_microbe_reference.empty:
+            raise ValueError("当前没有可用的疾病-微生物参考表。")
+        community = build_disease_adjusted_community(
+            microbe_metadata=self.microbe_feature_table,
+            disease_name=disease_name,
+            disease_microbe_reference=self.disease_microbe_reference,
+        )
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        community.to_csv(output_path, index=False)
+        return output_path
+
     def _profile_from_frame(self, frame: pd.DataFrame) -> dict[str, object]:
         work = self._annotate_step2_mechanism(self._annotate_amr(frame))
+        candidate_diseases = self._candidate_diseases_from_frame(work)
         row = work.iloc[0]
 
         label_column = "display_step1_predicted_effect_label"
@@ -587,6 +872,19 @@ class GutPredictionService:
                     "predicted_effect_label": effect_row.get(label_column),
                     "predicted_inhibit_probability": _safe_float(effect_row.get(probability_column)),
                     "predicted_effect_score": _safe_float(effect_row.get(score_column)),
+                    "predicted_promote_probability_base": _safe_float(effect_row.get("predicted_promote_probability_base")),
+                    "predicted_promote_probability_refined": _safe_float(
+                        effect_row.get("predicted_promote_probability_refined")
+                    ),
+                    "predicted_promote_support_score": _safe_float(effect_row.get("predicted_promote_support_score")),
+                    "predicted_promote_support_type": effect_row.get("predicted_promote_support_type"),
+                    "predicted_promote_evidence_type": effect_row.get("predicted_promote_evidence_type"),
+                    "predicted_cross_feeding_reference_flag": _safe_bool(
+                        effect_row.get("predicted_cross_feeding_reference_flag")
+                    ),
+                    "predicted_cross_feeding_support_microbe": effect_row.get("predicted_cross_feeding_support_microbe"),
+                    "predicted_cross_feeding_match_mode": effect_row.get("predicted_cross_feeding_match_mode"),
+                    "predicted_cross_feeding_matched_term": effect_row.get("predicted_cross_feeding_matched_term"),
                     "raw_predicted_effect_label": effect_row.get("raw_step1_predicted_effect_label"),
                     "raw_predicted_inhibit_probability": _safe_float(effect_row.get("raw_step1_predicted_inhibit_probability")),
                     "raw_predicted_effect_score": _safe_float(effect_row.get("raw_step1_predicted_effect_score")),
@@ -609,6 +907,19 @@ class GutPredictionService:
                     "predicted_effect_label": effect_row.get(label_column),
                     "predicted_inhibit_probability": _safe_float(effect_row.get(probability_column)),
                     "predicted_effect_score": _safe_float(effect_row.get(score_column)),
+                    "predicted_promote_probability_base": _safe_float(effect_row.get("predicted_promote_probability_base")),
+                    "predicted_promote_probability_refined": _safe_float(
+                        effect_row.get("predicted_promote_probability_refined")
+                    ),
+                    "predicted_promote_support_score": _safe_float(effect_row.get("predicted_promote_support_score")),
+                    "predicted_promote_support_type": effect_row.get("predicted_promote_support_type"),
+                    "predicted_promote_evidence_type": effect_row.get("predicted_promote_evidence_type"),
+                    "predicted_cross_feeding_reference_flag": _safe_bool(
+                        effect_row.get("predicted_cross_feeding_reference_flag")
+                    ),
+                    "predicted_cross_feeding_support_microbe": effect_row.get("predicted_cross_feeding_support_microbe"),
+                    "predicted_cross_feeding_match_mode": effect_row.get("predicted_cross_feeding_match_mode"),
+                    "predicted_cross_feeding_matched_term": effect_row.get("predicted_cross_feeding_matched_term"),
                     "raw_predicted_effect_label": effect_row.get("raw_step1_predicted_effect_label"),
                     "raw_predicted_inhibit_probability": _safe_float(effect_row.get("raw_step1_predicted_inhibit_probability")),
                     "raw_predicted_effect_score": _safe_float(effect_row.get("raw_step1_predicted_effect_score")),
@@ -643,6 +954,20 @@ class GutPredictionService:
                     "predicted_candidate_product_count": _safe_float(metabolism_row.get("predicted_candidate_product_count")),
                     "predicted_evidence_gene_ids": metabolism_row.get("predicted_evidence_gene_ids"),
                     "predicted_evidence_gene_count": _safe_float(metabolism_row.get("predicted_evidence_gene_count")),
+                    "predicted_enzyme_prior_flag": _safe_bool(metabolism_row.get("predicted_enzyme_prior_flag")),
+                    "predicted_enzyme_match_count": _safe_float(metabolism_row.get("predicted_enzyme_match_count")),
+                    "predicted_enzyme_ids": metabolism_row.get("predicted_enzyme_ids"),
+                    "predicted_enzyme_names": metabolism_row.get("predicted_enzyme_names"),
+                    "predicted_enzyme_reaction_classes": metabolism_row.get("predicted_enzyme_reaction_classes"),
+                    "predicted_enzyme_bond_targets": metabolism_row.get("predicted_enzyme_bond_targets"),
+                    "predicted_enzyme_presence_score": _safe_float(metabolism_row.get("predicted_enzyme_presence_score")),
+                    "predicted_enzyme_support_score": _safe_float(metabolism_row.get("predicted_enzyme_support_score")),
+                    "predicted_enzyme_step1_promote_support_score": _safe_float(
+                        metabolism_row.get("predicted_enzyme_step1_promote_support_score")
+                    ),
+                    "predicted_enzyme_step1_inhibit_risk_score": _safe_float(
+                        metabolism_row.get("predicted_enzyme_step1_inhibit_risk_score")
+                    ),
                 }
             )
 
@@ -669,6 +994,20 @@ class GutPredictionService:
                     "predicted_candidate_product_count": _safe_float(metabolism_row.get("predicted_candidate_product_count")),
                     "predicted_evidence_gene_ids": metabolism_row.get("predicted_evidence_gene_ids"),
                     "predicted_evidence_gene_count": _safe_float(metabolism_row.get("predicted_evidence_gene_count")),
+                    "predicted_enzyme_prior_flag": _safe_bool(metabolism_row.get("predicted_enzyme_prior_flag")),
+                    "predicted_enzyme_match_count": _safe_float(metabolism_row.get("predicted_enzyme_match_count")),
+                    "predicted_enzyme_ids": metabolism_row.get("predicted_enzyme_ids"),
+                    "predicted_enzyme_names": metabolism_row.get("predicted_enzyme_names"),
+                    "predicted_enzyme_reaction_classes": metabolism_row.get("predicted_enzyme_reaction_classes"),
+                    "predicted_enzyme_bond_targets": metabolism_row.get("predicted_enzyme_bond_targets"),
+                    "predicted_enzyme_presence_score": _safe_float(metabolism_row.get("predicted_enzyme_presence_score")),
+                    "predicted_enzyme_support_score": _safe_float(metabolism_row.get("predicted_enzyme_support_score")),
+                    "predicted_enzyme_step1_promote_support_score": _safe_float(
+                        metabolism_row.get("predicted_enzyme_step1_promote_support_score")
+                    ),
+                    "predicted_enzyme_step1_inhibit_risk_score": _safe_float(
+                        metabolism_row.get("predicted_enzyme_step1_inhibit_risk_score")
+                    ),
                 }
             )
 
@@ -681,21 +1020,49 @@ class GutPredictionService:
             "mean_predicted_inhibit_probability": _safe_float(
                 work[probability_column].mean() if probability_column in work.columns else np.nan
             ),
+            "mean_predicted_promote_probability_refined": _safe_float(
+                work["predicted_promote_probability_refined"].mean()
+                if "predicted_promote_probability_refined" in work.columns
+                else np.nan
+            ),
             "mean_predicted_metabolized_probability": _safe_float(work["predicted_metabolized_probability"].mean()),
             "applicability_rate": _safe_float(work["applicability_flag"].fillna(False).mean()),
             "mechanism_projection_rate": _safe_float(work["predicted_mechanism_projection_flag"].fillna(False).mean()),
+            "enzyme_prior_support_rate": _safe_float(
+                work.get("predicted_enzyme_prior_flag", pd.Series(False, index=work.index)).fillna(False).mean()
+            ),
+            "mean_enzyme_support_score": _safe_float(
+                work.get("predicted_enzyme_support_score", pd.Series(np.nan, index=work.index)).mean()
+            ),
             "reaction_projection_pairs": int(work["predicted_reaction_class"].fillna("").astype(str).str.strip().ne("").sum()),
             "gene_projection_pairs": int(
                 work["predicted_evidence_gene_ids"].fillna("").astype(str).str.strip().ne("").sum()
             ),
+            "enzyme_prior_supported_pairs": int(
+                work.get("predicted_enzyme_prior_flag", pd.Series(False, index=work.index)).fillna(False).sum()
+            ),
             "amr_conflict_pairs": int(work["amr_conflict_flag"].fillna(False).sum()),
             "amr_corrected_pairs": int(work["amr_correction_applied"].fillna(False).sum()),
+            "metabolism_supported_promote_pairs": int(
+                (
+                    work.get("predicted_promote_support_type", pd.Series(np.nan, index=work.index)).eq("self_metabolism_supported")
+                    & work.get(label_column, pd.Series(np.nan, index=work.index)).eq("promote")
+                ).sum()
+            ),
+            "cross_feeding_supported_promote_pairs": int(
+                (
+                    work.get("predicted_cross_feeding_reference_flag", pd.Series(False, index=work.index)).fillna(False).astype(bool)
+                    & work.get(label_column, pd.Series(np.nan, index=work.index)).eq("promote")
+                ).sum()
+            ),
         }
 
         return _clean_json(
             {
                 "drug": self._drug_metadata(row),
                 "aggregated": aggregated,
+                "candidate_diseases": candidate_diseases,
+                "marketed_disease_context": self._marketed_disease_context(row.get("chemical_name")),
                 "top_effect_microbes": top_effect_records,
                 "panel_effect_microbes": panel_effect_records,
                 "top_metabolism_microbes": top_metabolism_records,
@@ -722,6 +1089,15 @@ class GutPredictionService:
             "predicted_effect_magnitude": _safe_float(
                 row.get(self.step1_magnitude_column) if self.step1_magnitude_column else None
             ),
+            "predicted_promote_probability_base": _safe_float(row.get("predicted_promote_probability_base")),
+            "predicted_promote_probability_refined": _safe_float(row.get("predicted_promote_probability_refined")),
+            "predicted_promote_support_score": _safe_float(row.get("predicted_promote_support_score")),
+            "predicted_promote_support_type": row.get("predicted_promote_support_type"),
+            "predicted_promote_evidence_type": row.get("predicted_promote_evidence_type"),
+            "predicted_cross_feeding_reference_flag": _safe_bool(row.get("predicted_cross_feeding_reference_flag")),
+            "predicted_cross_feeding_support_microbe": row.get("predicted_cross_feeding_support_microbe"),
+            "predicted_cross_feeding_match_mode": row.get("predicted_cross_feeding_match_mode"),
+            "predicted_cross_feeding_matched_term": row.get("predicted_cross_feeding_matched_term"),
             "raw_predicted_effect_label": row.get("raw_step1_predicted_effect_label"),
             "raw_predicted_inhibit_probability": _safe_float(row.get("raw_step1_predicted_inhibit_probability")),
             "raw_predicted_effect_score": _safe_float(row.get("raw_step1_predicted_effect_score")),
@@ -763,6 +1139,20 @@ class GutPredictionService:
             "predicted_candidate_product_count": _safe_float(row.get("predicted_candidate_product_count")),
             "predicted_evidence_gene_ids": row.get("predicted_evidence_gene_ids"),
             "predicted_evidence_gene_count": _safe_float(row.get("predicted_evidence_gene_count")),
+            "predicted_enzyme_prior_flag": _safe_bool(row.get("predicted_enzyme_prior_flag")),
+            "predicted_enzyme_match_count": _safe_float(row.get("predicted_enzyme_match_count")),
+            "predicted_enzyme_ids": row.get("predicted_enzyme_ids"),
+            "predicted_enzyme_names": row.get("predicted_enzyme_names"),
+            "predicted_enzyme_reaction_classes": row.get("predicted_enzyme_reaction_classes"),
+            "predicted_enzyme_bond_targets": row.get("predicted_enzyme_bond_targets"),
+            "predicted_enzyme_presence_score": _safe_float(row.get("predicted_enzyme_presence_score")),
+            "predicted_enzyme_support_score": _safe_float(row.get("predicted_enzyme_support_score")),
+            "predicted_enzyme_step1_promote_support_score": _safe_float(
+                row.get("predicted_enzyme_step1_promote_support_score")
+            ),
+            "predicted_enzyme_step1_inhibit_risk_score": _safe_float(
+                row.get("predicted_enzyme_step1_inhibit_risk_score")
+            ),
         }
         return _clean_json(
             {
@@ -821,6 +1211,7 @@ class GutPredictionService:
         )
         drug = _compute_smiles_descriptors(drug)
         drug = enrich_drug_table_with_rdkit(drug, smiles_columns=["main_component_smiles", "smiles"])
+        drug = annotate_compound_semantics(drug)
         if "molecular_formula" in drug.columns:
             drug["molecular_formula"] = drug["molecular_formula"].fillna(drug.get("rdkit_formula"))
         if "molecular_weight" in drug.columns:
@@ -925,6 +1316,13 @@ class GutPredictionService:
         )
 
         integrated_frame = pd.read_csv(step2_output_dir / "predictions.csv", low_memory=False)
+        integrated_frame = refine_step1_promote_with_step2(
+            integrated_frame,
+            promote_classifier_path=self.step1_promote_classifier_path,
+            promote_metrics_path=self.step1_promote_metrics_path,
+            cross_feeding_reference_path=self.cross_feeding_reference_path,
+        )
+        integrated_frame.to_csv(step2_output_dir / "predictions.csv", index=False)
         self.custom_sessions[session_id] = {
             "session_id": session_id,
             "session_dir": session_dir,
@@ -1010,6 +1408,7 @@ class GutPredictionService:
                 "drugs": drugs,
                 "microbes": microbes,
                 "custom_microbes": custom_microbes,
+                "diseases": self.disease_catalog,
                 "scenarios": scenarios,
                 "cohort_communities": self.cohort_communities,
                 "demo_candidates": self.demo_ranking,
@@ -1072,6 +1471,7 @@ class GutPredictionService:
         drug_query: str,
         scenario_name: str = "healthy_reference",
         community_table_path: str | None = None,
+        disease_name: str | None = None,
         n_steps: int = 14,
         initial_dose: float = 1.0,
         repeat_dose: float = 1.0,
@@ -1084,10 +1484,15 @@ class GutPredictionService:
     ) -> dict[str, object]:
         drug_id = self._resolve_drug_id(drug_query)
         resolved_community_path = self._resolve_community_table_path(community_table_path)
-        if resolved_community_path is None and scenario_name not in BUILTIN_SCENARIOS:
-            raise ValueError(f"不支持的 scenario_name: {scenario_name}")
 
         with tempfile.TemporaryDirectory(prefix="gut_step3_web_", dir=self.temp_root) as temp_dir_name:
+            if resolved_community_path is None and disease_name and str(disease_name).strip():
+                resolved_community_path = self._write_disease_adjusted_community(
+                    Path(temp_dir_name) / f"{_canonicalize_key(disease_name) or 'disease'}_community.csv",
+                    disease_name=str(disease_name).strip(),
+                )
+            if resolved_community_path is None and scenario_name not in BUILTIN_SCENARIOS:
+                raise ValueError(f"不支持的 scenario_name: {scenario_name}")
             summary = run_step3_simulation(
                 integrated_predictions_path=self.integrated_predictions_path,
                 output_dir=Path(temp_dir_name),
@@ -1121,12 +1526,19 @@ class GutPredictionService:
                 "benefit_subscore",
                 "risk_subscore",
                 "dysbiosis_penalty",
+                "interaction_dysbiosis_penalty",
                 "uncertainty_penalty",
                 "metabolite_burden_penalty",
                 "mean_applicability",
                 "diversity",
                 "beneficial_fraction",
                 "risk_fraction",
+                "health_index_legacy",
+                "interaction_component",
+                "interaction_balance_rho",
+                "interaction_balance_shift",
+                "positive_interaction_strength",
+                "negative_interaction_strength",
                 "tcg_health_index",
                 "tcg_guild_1_fraction",
                 "tcg_guild_2_fraction",
@@ -1154,6 +1566,7 @@ class GutPredictionService:
                     for key, value in summary.items()
                     if not str(key).endswith("_path")
                 },
+                "disease_name": disease_name,
                 "trajectory_metrics": trajectory_metrics.loc[:, keep_metric_columns],
                 "top_microbe_changes": top_microbe_changes.loc[:, keep_change_columns],
             }
@@ -1164,6 +1577,7 @@ class GutPredictionService:
         session_id: str,
         scenario_name: str = "healthy_reference",
         community_table_path: str | None = None,
+        disease_name: str | None = None,
         n_steps: int = 14,
         initial_dose: float = 1.0,
         repeat_dose: float = 1.0,
@@ -1178,10 +1592,15 @@ class GutPredictionService:
         integrated_predictions_path = Path(session["integrated_predictions_path"])  # type: ignore[arg-type]
         drug_id = str(session["drug_id"])
         resolved_community_path = self._resolve_community_table_path(community_table_path)
-        if resolved_community_path is None and scenario_name not in BUILTIN_SCENARIOS:
-            raise ValueError(f"不支持的 scenario_name: {scenario_name}")
 
         with tempfile.TemporaryDirectory(prefix="gut_step3_custom_", dir=self.temp_root) as temp_dir_name:
+            if resolved_community_path is None and disease_name and str(disease_name).strip():
+                resolved_community_path = self._write_disease_adjusted_community(
+                    Path(temp_dir_name) / f"{_canonicalize_key(disease_name) or 'disease'}_community.csv",
+                    disease_name=str(disease_name).strip(),
+                )
+            if resolved_community_path is None and scenario_name not in BUILTIN_SCENARIOS:
+                raise ValueError(f"不支持的 scenario_name: {scenario_name}")
             summary = run_step3_simulation(
                 integrated_predictions_path=integrated_predictions_path,
                 output_dir=Path(temp_dir_name),
@@ -1215,12 +1634,19 @@ class GutPredictionService:
                 "benefit_subscore",
                 "risk_subscore",
                 "dysbiosis_penalty",
+                "interaction_dysbiosis_penalty",
                 "uncertainty_penalty",
                 "metabolite_burden_penalty",
                 "mean_applicability",
                 "diversity",
                 "beneficial_fraction",
                 "risk_fraction",
+                "health_index_legacy",
+                "interaction_component",
+                "interaction_balance_rho",
+                "interaction_balance_shift",
+                "positive_interaction_strength",
+                "negative_interaction_strength",
                 "tcg_health_index",
                 "tcg_guild_1_fraction",
                 "tcg_guild_2_fraction",
@@ -1247,6 +1673,7 @@ class GutPredictionService:
                     for key, value in summary.items()
                     if not str(key).endswith("_path")
                 },
+                "disease_name": disease_name,
                 "trajectory_metrics": trajectory_metrics.loc[:, keep_metric_columns],
                 "top_microbe_changes": top_microbe_changes.loc[:, keep_change_columns],
                 "session_id": session_id,
@@ -1257,6 +1684,7 @@ class GutPredictionService:
         self,
         drug_query: str,
         community_table_path: str | None = None,
+        disease_name: str | None = None,
         n_steps: int = 14,
         initial_dose: float = 1.0,
         repeat_dose: float = 1.0,
@@ -1268,10 +1696,11 @@ class GutPredictionService:
         ecology_strength: float = 0.20,
     ) -> dict[str, object]:
         summaries: list[dict[str, object]] = []
-        if self._resolve_community_table_path(community_table_path) is not None:
+        if disease_name or self._resolve_community_table_path(community_table_path) is not None:
             result = self.simulate_step3(
                 drug_query=drug_query,
                 community_table_path=community_table_path,
+                disease_name=disease_name,
                 n_steps=n_steps,
                 initial_dose=initial_dose,
                 repeat_dose=repeat_dose,
@@ -1312,6 +1741,7 @@ class GutPredictionService:
         self,
         session_id: str,
         community_table_path: str | None = None,
+        disease_name: str | None = None,
         n_steps: int = 14,
         initial_dose: float = 1.0,
         repeat_dose: float = 1.0,
@@ -1324,10 +1754,11 @@ class GutPredictionService:
     ) -> dict[str, object]:
         summaries: list[dict[str, object]] = []
         session = self._custom_session(session_id)
-        if self._resolve_community_table_path(community_table_path) is not None:
+        if disease_name or self._resolve_community_table_path(community_table_path) is not None:
             result = self.simulate_custom_step3(
                 session_id=session_id,
                 community_table_path=community_table_path,
+                disease_name=disease_name,
                 n_steps=n_steps,
                 initial_dose=initial_dose,
                 repeat_dose=repeat_dose,
