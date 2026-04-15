@@ -285,6 +285,10 @@ def _warning_reason_text(flag: str, breakdown: dict[str, object]) -> str:
         if profile and profile != "unknown":
             return f"预测方向与药物类型（{profile}）不一致"
         return "预测方向与药物类型不一致"
+    if flag == "antifolate-mismatch":
+        if not pd.isna(strong_core) and not pd.isna(core_total):
+            return f"磺胺类预期靶向效应不足（核心产丁酸菌强抑制仅 {int(strong_core)}/{max(int(core_total), 1)}）"
+        return "磺胺类预期靶向效应不足（未见核心产丁酸菌抑制）"
     if flag == "OOD-molecule":
         details = []
         if molecular_weight is not None:
@@ -397,6 +401,20 @@ def evaluate_prediction_confidence(
         profile_conflict = inhibit_fraction < 0.20
     elif profile_key == "contextual_antimicrobial":
         profile_conflict = inhibit_fraction < 0.20
+    elif profile_key == "sulfonamide_antifolate":
+        profile_conflict = False
+        if core_total > 0 and core_strong_fraction < 0.30:
+            warnings.append("antifolate-mismatch")
+            penalties.append(
+                {
+                    "rule": "sulfonamide_antifolate_core_mismatch",
+                    "penalty": 0.22,
+                    "evidence": (
+                        f"profile={profile_key}, strong_core={strong_core}/{max(core_total,1)}, "
+                        f"core_strong_fraction={core_strong_fraction:.3f}"
+                    ),
+                }
+            )
     if profile_conflict:
         warnings.append("drug-profile-conflict")
         penalties.append(
@@ -1215,8 +1233,22 @@ class GutPredictionService:
             return "host_secretagogue"
         if "metronidazole" in name_key:
             return "contextual_antimicrobial"
+        if (
+            "sulfasalazine" in name_key
+            or "sasp" in name_key
+            or "sulfapyridine" in name_key
+            or "sulfonamide" in name_key
+            or "sulfamethoxazole" in name_key
+            or "sulfadiazine" in name_key
+            or "sulfisoxazole" in name_key
+            or "cotrimoxazole" in name_key
+            or "trimethoprimsulfamethoxazole" in name_key
+        ):
+            return "sulfonamide_antifolate"
 
         cls_key = _canonicalize_key(row.get("therapeutic_class"))
+        if "sulfonamide" in cls_key or "antifolate" in cls_key:
+            return "sulfonamide_antifolate"
         if "antibiotic" in cls_key:
             return "disruptive_antibiotic"
         return "unknown"

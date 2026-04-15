@@ -213,6 +213,17 @@ class AmrRuleEngine:
         ]
         polymyxin_tokens = ["polymyxin", "polymyxinb", "colistin", "polymyxine"]
         low_anaerobe_fluoroquinolone_tokens = ["ciprofloxacin", "levofloxacin", "ofloxacin", "norfloxacin"]
+        sulfonamide_tokens = [
+            "sulfasalazine",
+            "sulfapyridine",
+            "sulfonamide",
+            "sulfamethoxazole",
+            "sulfadiazine",
+            "sulfisoxazole",
+            "cotrimoxazole",
+            "trimethoprimsulfamethoxazole",
+            "antifolate",
+        ]
 
         if any(token in joined for token in penicillin_tokens):
             classes.extend(["penicillin", "beta_lactam"])
@@ -256,6 +267,14 @@ class AmrRuleEngine:
             if "norfloxacin" in joined:
                 classes.append("norfloxacin")
             classes.append("fluoroquinolone_low_anaerobe")
+        if any(token in joined for token in sulfonamide_tokens):
+            if "sulfasalazine" in joined:
+                classes.append("sulfasalazine")
+            if "sulfapyridine" in joined:
+                classes.append("sulfapyridine")
+            if "sulfamethoxazole" in joined:
+                classes.append("sulfamethoxazole")
+            classes.extend(["sulfonamide", "sulfonamide_antifolate"])
 
         smiles = str(row.get("canonical_smiles_rdkit") or row.get("smiles") or row.get("main_component_smiles") or "").strip()
         if smiles and Chem is not None and _BETA_LACTAM_RING is not None:

@@ -18,6 +18,7 @@ from .train_baseline import _prepare_feature_frame
 
 STEP1_PROFILE_EUBIOTIC = "eubiotic_modulator"
 STEP1_PROFILE_HOST = "host_pathway_agent"
+STEP1_PROFILE_ANTIFOLATE = "sulfonamide_antifolate"
 
 
 def _pick_first_series(frame: pd.DataFrame, candidates: list[str], default_value: object = np.nan) -> pd.Series:
@@ -529,8 +530,20 @@ def _infer_step1_drug_profile_series(frame: pd.DataFrame) -> pd.Series:
         | merged.str.contains("secretagogue", regex=False)
         | merged.str.contains("chloridechannelactivator", regex=False)
     )
+    antifolate_mask = (
+        merged.str.contains("sulfasalazine", regex=False)
+        | merged.str.contains("sasp", regex=False)
+        | merged.str.contains("sulfapyridine", regex=False)
+        | merged.str.contains("sulfonamide", regex=False)
+        | merged.str.contains("sulfamethoxazole", regex=False)
+        | merged.str.contains("sulfadiazine", regex=False)
+        | merged.str.contains("sulfisoxazole", regex=False)
+        | merged.str.contains("cotrimoxazole", regex=False)
+        | merged.str.contains("antifolate", regex=False)
+    )
     profile.loc[eubiotic_mask] = STEP1_PROFILE_EUBIOTIC
     profile.loc[host_mask] = STEP1_PROFILE_HOST
+    profile.loc[antifolate_mask] = STEP1_PROFILE_ANTIFOLATE
     return profile
 
 
@@ -545,6 +558,34 @@ def _core_butyrate_mask(frame: pd.DataFrame) -> pd.Series:
         | species_key.str.contains("eubacteriumrectale", regex=False)
         | genus_key.str.contains("roseburia", regex=False)
     )
+
+
+def _antifolate_vulnerability_score(frame: pd.DataFrame) -> pd.Series:
+    """Estimate microbe susceptibility for sulfonamide-like antifolate pressure."""
+    species = _pick_first_series(frame, ["species_label", "microbe_label", "species_name"], default_value="").fillna("").astype(str)
+    genus = _pick_first_series(frame, ["genus"], default_value="").fillna("").astype(str)
+    medium = _pick_first_series(frame, ["medium_preference"], default_value="").fillna("").astype(str)
+
+    species_key = species.map(_normalize_lookup_value)
+    genus_key = genus.map(_normalize_lookup_value)
+    medium_key = medium.map(_normalize_lookup_value)
+    core_mask = _core_butyrate_mask(frame)
+
+    strict_anaerobe_mask = (
+        medium_key.str.contains("anaerob", regex=False)
+        | genus_key.isin({"faecalibacterium", "roseburia", "eubacterium", "anaerostipes", "coprococcus", "butyrivibrio"})
+    )
+    likely_folate_denovo_mask = (
+        core_mask
+        | genus_key.isin({"faecalibacterium", "roseburia", "eubacterium", "anaerostipes", "coprococcus", "butyrivibrio"})
+        | species_key.str.contains("faecalibacteriumprausnitzii", regex=False)
+    )
+
+    score = pd.Series(0.18, index=frame.index, dtype=float)
+    score = score + core_mask.astype(float) * 0.44
+    score = score + strict_anaerobe_mask.astype(float) * 0.20
+    score = score + likely_folate_denovo_mask.astype(float) * 0.18
+    return score.clip(0.0, 1.0)
 
 
 def _apply_step1_drug_profile_constraints(
@@ -565,6 +606,8 @@ def _apply_step1_drug_profile_constraints(
         "eubiotic_core_rows_adjusted": 0,
         "host_rows_adjusted": 0,
         "host_high_evidence_rows_retained": 0,
+        "antifolate_rows_adjusted": 0,
+        "antifolate_sensitive_rows_boosted": 0,
     }
 
     # Constraint 1: eubiotic_modulator should not indiscriminately strongly inhibit core butyrate producers.
@@ -605,6 +648,32 @@ def _apply_step1_drug_profile_constraints(
 
         summary["host_rows_adjusted"] = int(host_mask.sum())
         summary["host_high_evidence_rows_retained"] = int(keep_high.sum())
+
+    # Constraint 3: sulfonamide-antifolate agents should preferentially inhibit folate-vulnerable anaerobes.
+    antifolate_mask = profile.eq(STEP1_PROFILE_ANTIFOLATE)
+    if antifolate_mask.any():
+        vulnerability_score = _antifolate_vulnerability_score(result)
+        result["predicted_folate_vulnerability_score"] = vulnerability_score
+        sensitive_mask = antifolate_mask & (vulnerability_score >= 0.55)
+        background_mask = antifolate_mask & ~sensitive_mask
+
+        if sensitive_mask.any():
+            inhibit_prob.loc[sensitive_mask] = (
+                inhibit_prob.loc[sensitive_mask].fillna(0.0) + 0.18 + 0.22 * vulnerability_score.loc[sensitive_mask]
+            ).clip(0.0, 1.0)
+            effect_score.loc[sensitive_mask] = (
+                effect_score.loc[sensitive_mask].fillna(0.0) - (0.06 + 0.18 * vulnerability_score.loc[sensitive_mask])
+            )
+            result.loc[sensitive_mask, "step1_constraint_applied"] = True
+            result.loc[sensitive_mask, "step1_constraint_reason"] = "antifolate_core_folate_vulnerability_boost"
+
+        if background_mask.any():
+            inhibit_prob.loc[background_mask] = (
+                inhibit_prob.loc[background_mask].fillna(0.0) * (0.90 + 0.08 * vulnerability_score.loc[background_mask])
+            ).clip(0.0, 1.0)
+
+        summary["antifolate_rows_adjusted"] = int(antifolate_mask.sum())
+        summary["antifolate_sensitive_rows_boosted"] = int(sensitive_mask.sum())
 
     result["predicted_inhibit_probability"] = inhibit_prob
     result["predicted_effect_score"] = effect_score
