@@ -21,6 +21,21 @@ function escapeHtml(value) {
     .replaceAll("'", "&#39;");
 }
 
+function isMissingLike(value) {
+  if (value === null || value === undefined) {
+    return true;
+  }
+  if (typeof value === "number" && Number.isNaN(value)) {
+    return true;
+  }
+  const text = String(value).trim().toLowerCase();
+  return text === "" || text === "nan" || text === "none" || text === "null" || text === "n/a" || text === "na";
+}
+
+function textOrNA(value, fallback = "N/A") {
+  return isMissingLike(value) ? fallback : String(value).trim();
+}
+
 function formatNumber(value, digits = 3) {
   if (value === null || value === undefined || Number.isNaN(Number(value))) {
     return "N/A";
@@ -112,7 +127,11 @@ function toFiniteNumber(value) {
 
 function firstNonEmpty(rows, field, fallback = "") {
   for (const row of rows || []) {
-    const value = String(row?.[field] || "").trim();
+    const raw = row?.[field];
+    if (isMissingLike(raw)) {
+      continue;
+    }
+    const value = String(raw).trim();
     if (value) {
       return value;
     }
@@ -123,7 +142,11 @@ function firstNonEmpty(rows, field, fallback = "") {
 function majorityLabel(rows, field, fallback = "") {
   const counts = new Map();
   for (const row of rows || []) {
-    const value = String(row?.[field] || "").trim();
+    const raw = row?.[field];
+    if (isMissingLike(raw)) {
+      continue;
+    }
+    const value = String(raw).trim();
     if (!value) {
       continue;
     }
@@ -161,7 +184,11 @@ function uniqueJoinedValues(rows, field, maxItems = 3) {
   const values = [];
   const seen = new Set();
   for (const row of rows || []) {
-    const raw = String(row?.[field] || "").trim();
+    const rawValue = row?.[field];
+    if (isMissingLike(rawValue)) {
+      continue;
+    }
+    const raw = String(rawValue).trim();
     if (!raw || seen.has(raw)) {
       continue;
     }
@@ -692,6 +719,7 @@ function pickMechanismLead(profile) {
     metabolism: metabolismMap.get(row.nt_code) || null,
   }));
   return (
+    annotated.find((row) => Boolean(row.metabolism?.predicted_enzyme_prior_flag)) ||
     annotated.find((row) => row.predicted_cross_feeding_reference_flag) ||
     annotated.find(
       (row) =>
@@ -730,6 +758,14 @@ function renderMechanismExplainCard(profile, selectedPair = null) {
   }
 
   const metabolism = lead.metabolism || {};
+  const reactionClass = textOrNA(metabolism.predicted_reaction_class, "");
+  const enzymeReactionClass = textOrNA(metabolism.predicted_enzyme_reaction_classes, "");
+  const reactionDisplay = reactionClass || enzymeReactionClass || "N/A";
+  const profileKey = String(
+    profile?.confidence_breakdown?.drug_profile || profile?.aggregated?.confidence_breakdown?.drug_profile || ""
+  )
+    .trim()
+    .toLowerCase();
   const summaryParts = [];
   if (lead.predicted_cross_feeding_reference_flag) {
     summaryParts.push("命中交叉喂养参考");
@@ -743,23 +779,26 @@ function renderMechanismExplainCard(profile, selectedPair = null) {
   if (metabolism.predicted_enzyme_prior_flag) {
     summaryParts.push("酶先验支持");
   }
+  if (profileKey === "sulfonamide_antifolate" && !metabolism.predicted_enzyme_prior_flag) {
+    summaryParts.push("该药物以靶点抑菌机制为主，非代谢酶主导");
+  }
 
   renderDetailList("mechanismExplainCard", [
-    { label: "重点菌", value: escapeHtml(lead.microbe_label || lead.nt_code || "N/A") },
+    { label: "重点菌", value: escapeHtml(textOrNA(lead.microbe_label || lead.nt_code, "N/A")) },
     { label: "当前标签", value: createStatusPill(lead.predicted_effect_label || "N/A") },
     { label: "解释摘要", value: summaryParts.length ? escapeHtml(summaryParts.join(" / ")) : "暂无明确机制线索" },
     { label: "Promote 概率", value: formatNumber(lead.predicted_promote_probability_refined, 3) },
-    { label: "供体菌", value: escapeHtml(lead.predicted_cross_feeding_support_microbe || "N/A") },
+    { label: "供体菌", value: escapeHtml(textOrNA(lead.predicted_cross_feeding_support_microbe, "N/A")) },
     { label: "命中方式", value: escapeHtml(describeCrossFeedingMatchMode(lead.predicted_cross_feeding_match_mode) || "N/A") },
-    { label: "命中词", value: escapeHtml(lead.predicted_cross_feeding_matched_term || "N/A") },
+    { label: "命中词", value: escapeHtml(textOrNA(lead.predicted_cross_feeding_matched_term, "N/A")) },
     { label: "代谢概率", value: formatNumber(metabolism.predicted_metabolized_probability, 3) },
     { label: "母药消耗", value: formatNumber(metabolism.predicted_parent_depletion_fraction, 3) },
-    { label: "反应类", value: escapeHtml(metabolism.predicted_reaction_class || "N/A") },
+    { label: "反应类", value: escapeHtml(reactionDisplay) },
     { label: "酶先验支持", value: metabolism.predicted_enzyme_prior_flag ? "是" : "否" },
     { label: "酶支持分", value: formatNumber(metabolism.predicted_enzyme_support_score, 3) },
-    { label: "候选酶", value: escapeHtml(metabolism.predicted_enzyme_names || metabolism.predicted_enzyme_ids || "N/A") },
-    { label: "酶反应类", value: escapeHtml(metabolism.predicted_enzyme_reaction_classes || "N/A") },
-    { label: "键靶点", value: escapeHtml(metabolism.predicted_enzyme_bond_targets || "N/A") },
+    { label: "候选酶", value: escapeHtml(textOrNA(metabolism.predicted_enzyme_names || metabolism.predicted_enzyme_ids, "N/A")) },
+    { label: "酶反应类", value: escapeHtml(textOrNA(metabolism.predicted_enzyme_reaction_classes, "N/A")) },
+    { label: "键靶点", value: escapeHtml(textOrNA(metabolism.predicted_enzyme_bond_targets, "N/A")) },
   ]);
 }
 

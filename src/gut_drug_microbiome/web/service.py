@@ -225,6 +225,22 @@ def _existing_usecols(path: Path, desired: list[str]) -> list[str]:
     return [column for column in desired if column in columns]
 
 
+def _normalize_null_like_strings(frame: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
+    """Normalize textual null markers ('nan', 'null', etc.) to NaN for selected columns."""
+    result = frame.copy()
+    for column in columns:
+        if column not in result.columns:
+            continue
+        series = result[column]
+        if not pd.api.types.is_object_dtype(series) and not pd.api.types.is_string_dtype(series):
+            continue
+        normalized = series.astype(str).str.strip()
+        lower = normalized.str.lower()
+        mask = lower.isin({"", "nan", "none", "null", "n/a", "na"})
+        result.loc[mask, column] = np.nan
+    return result
+
+
 def _is_ibs_like_disease(disease_name: object) -> bool:
     key = _canonicalize_key(disease_name)
     return any(token in key for token in ["ibs", "肠易激", "ibsd", "ibsc"])
@@ -538,6 +554,18 @@ class GutPredictionService:
 
         usecols = _existing_usecols(self.integrated_predictions_path, DESIRED_COLUMNS)
         self.frame = pd.read_csv(self.integrated_predictions_path, usecols=usecols, low_memory=False)
+        self.frame = _normalize_null_like_strings(
+            self.frame,
+            columns=[
+                "predicted_reaction_class",
+                "predicted_enzyme_names",
+                "predicted_enzyme_ids",
+                "predicted_enzyme_reaction_classes",
+                "predicted_enzyme_bond_targets",
+                "predicted_candidate_product_ids",
+                "predicted_evidence_gene_ids",
+            ],
+        )
         self.frame = refine_step1_promote_with_step2(
             self.frame,
             promote_classifier_path=self.step1_promote_classifier_path,
@@ -1372,6 +1400,15 @@ class GutPredictionService:
                 }
             )
 
+        def _reaction_class_display(row: pd.Series) -> object:
+            primary = row.get("predicted_reaction_class")
+            if primary is not None and not pd.isna(primary) and str(primary).strip():
+                return primary
+            fallback = row.get("predicted_enzyme_reaction_classes")
+            if fallback is not None and not pd.isna(fallback) and str(fallback).strip():
+                return fallback
+            return primary
+
         top_metabolism_records = []
         for _, metabolism_row in top_metabolism_microbes.iterrows():
             top_metabolism_records.append(
@@ -1389,7 +1426,7 @@ class GutPredictionService:
                     "predicted_mechanism_projection_flag": _safe_bool(
                         metabolism_row.get("predicted_mechanism_projection_flag")
                     ),
-                    "predicted_reaction_class": metabolism_row.get("predicted_reaction_class"),
+                    "predicted_reaction_class": _reaction_class_display(metabolism_row),
                     "predicted_reaction_confidence": _safe_float(metabolism_row.get("predicted_reaction_confidence")),
                     "predicted_candidate_product_ids": metabolism_row.get("predicted_candidate_product_ids"),
                     "predicted_candidate_product_count": _safe_float(metabolism_row.get("predicted_candidate_product_count")),
@@ -1429,7 +1466,7 @@ class GutPredictionService:
                     "predicted_mechanism_projection_flag": _safe_bool(
                         metabolism_row.get("predicted_mechanism_projection_flag")
                     ),
-                    "predicted_reaction_class": metabolism_row.get("predicted_reaction_class"),
+                    "predicted_reaction_class": _reaction_class_display(metabolism_row),
                     "predicted_reaction_confidence": _safe_float(metabolism_row.get("predicted_reaction_confidence")),
                     "predicted_candidate_product_ids": metabolism_row.get("predicted_candidate_product_ids"),
                     "predicted_candidate_product_count": _safe_float(metabolism_row.get("predicted_candidate_product_count")),
