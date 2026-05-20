@@ -1,0 +1,41 @@
+{
+  "GeneratedProduct": [
+    {
+      "smiles": "CO",
+      "mol": "\n     RDKit          2D\n\n  2  1  0  0  0  0  0  0  0  0999 V2000\n    0.0000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n    1.2990    0.7500    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0\n  1  2  1  0\nM  END\n"
+    }
+  ],
+  "TemplateReaction": [
+    {
+      "ec": [
+        [
+          "3.2.1.21"
+        ]
+      ],
+      "ID": [
+        [
+          "RR-02-fe6bd9c943e08e4c-02-F",
+          "RR-02-4cb639bb5fbd59c0-04-F",
+          "RR-02-6d158cd1428fd896-06-F",
+          "RR-02-8d13ed1d68776a37-08-F",
+          "RR-02-ebdbfde6faedf000-10-F",
+          "RR-02-399d8836521b8014-12-F",
+          "RR-02-399d8836521b8014-14-F",
+          "RR-02-399d8836521b8014-16-F"
+        ]
+      ],
+      "Substrate": "MNXM61741",
+      "Product": "MNXM157"
+    }
+  ],
+  "QueryInformation": [
+    {
+      "name": "Albiflorin",
+      "ID": "Met14_C17457",
+      "smiles": "C[C@]12C[C@@H](O)[C@@H]3C[C@@]1(O[C@@H]1O[C@H](CO)[C@@H](O)[C@H](O)[C@H]1O)[C@]3(COC(=O)c1ccccc1)C(=O)O2",
+      "reactionCenter(s)": [
+        13
+      ]
+    }
+  ]
+}

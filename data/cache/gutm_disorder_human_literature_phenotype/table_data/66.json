@@ -1,0 +1,34 @@
+[
+  {
+    "Index": "66",
+    "PMID": "23276768",
+    "ResearchType": "Gut microbiota associated with phenotype",
+    "HumanOrMouse": "Human",
+    "Condition1": "Remission Colitis, Ulcerative",
+    "Condition1ID": "*",
+    "Condition2": "Health",
+    "Condition2ID": "D006262",
+    "GutMicrobe": "Escherichia coli",
+    "GutMicrobeID": "gm0305",
+    "GutMicrobeNcbiID": "562",
+    "Classification": "species",
+    "Alteration": "increase",
+    "SequencingTechnology": "16s rRNA gene sequencing"
+  },
+  {
+    "Index": "66",
+    "PMID": "23276768",
+    "ResearchType": "Gut microbiota associated with phenotype",
+    "HumanOrMouse": "Human",
+    "Condition1": "Remission Colitis, Ulcerative",
+    "Condition1ID": "*",
+    "Condition2": "Health",
+    "Condition2ID": "D006262",
+    "GutMicrobe": "Helicobacteraceae",
+    "GutMicrobeID": "gm0369",
+    "GutMicrobeNcbiID": "72293",
+    "Classification": "family",
+    "Alteration": "decrease",
+    "SequencingTechnology": "16s rRNA gene sequencing"
+  }
+]

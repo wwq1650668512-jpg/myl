@@ -1,0 +1,18 @@
+{
+  "primary_path": "data/reference/disease_microbe_dictionary.csv",
+  "supplement_paths": [
+    "data/reference/disease_microbe_gutm_disorder_supplement.csv"
+  ],
+  "output_path": "data/reference/disease_microbe_dictionary_merged.csv",
+  "n_rows": 1566,
+  "n_diseases": 18,
+  "desired_step1_effect_counts": {
+    "promote": 823,
+    "inhibit": 736,
+    "unknown": 7
+  },
+  "source_database_counts": {
+    "gutMDisorder v2.0": 1376,
+    "disease_microbe_dictionary": 190
+  }
+}

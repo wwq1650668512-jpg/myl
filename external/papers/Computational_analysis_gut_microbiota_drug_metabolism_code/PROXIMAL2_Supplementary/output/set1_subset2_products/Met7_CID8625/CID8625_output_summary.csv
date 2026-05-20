@@ -1,0 +1,5 @@
+,DrugName,DrugSmiles,EC,ReactionCenter,ProductSmiles,ProductInChiKey
+0,Neoprontosil,CC(O)=Nc1cc2c(O)c(N=Nc3ccc(S(N)(=O)=O)cc3)c(S(=O)(=O)O)cc2cc1S(=O)(=O)O,1.7.1.-,12,Nc1ccc(S(N)(=O)=O)cc1,FDDDEECHVMSUSB-UHFFFAOYSA-N
+1,Neoprontosil,CC(O)=Nc1cc2c(O)c(N=Nc3ccc(S(N)(=O)=O)cc3)c(S(=O)(=O)O)cc2cc1S(=O)(=O)O,3.2.1.21,9,C/C(O)=N/c1cc2c(OC3OC(CO)C(O)C(O)C3O)c(/N=N/c3ccc(S(N)(=O)=O)cc3)c(S(=O)(=O)O)cc2cc1S(=O)(=O)O,RHXRTYJEIXQPSY-BYYHNAKLSA-N
+2,Neoprontosil,CC(O)=Nc1cc2c(O)c(N=Nc3ccc(S(N)(=O)=O)cc3)c(S(=O)(=O)O)cc2cc1S(=O)(=O)O,2.4.1.111,9,C/C(O)=N/c1cc2c(OC3OC(CO)C(O)C(O)C3O)c(/N=N/c3ccc(S(N)(=O)=O)cc3)c(S(=O)(=O)O)cc2cc1S(=O)(=O)O,RHXRTYJEIXQPSY-BYYHNAKLSA-N
+3,Neoprontosil,CC(O)=Nc1cc2c(O)c(N=Nc3ccc(S(N)(=O)=O)cc3)c(S(=O)(=O)O)cc2cc1S(=O)(=O)O,3.2.1.126,9,C/C(O)=N/c1cc2c(OC3OC(CO)C(O)C(O)C3O)c(/N=N/c3ccc(S(N)(=O)=O)cc3)c(S(=O)(=O)O)cc2cc1S(=O)(=O)O,RHXRTYJEIXQPSY-BYYHNAKLSA-N

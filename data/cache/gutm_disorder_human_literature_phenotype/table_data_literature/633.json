@@ -1,0 +1,34 @@
+[
+  {
+    "Index": "633",
+    "PMID": "22339879",
+    "ResearchType": "Gut microbiota associated with phenotype",
+    "HumanOrMouse": "Human",
+    "Condition1": "Diarrhea-Predominant Irritable Bowel Syndrome",
+    "Condition1ID": "*",
+    "Condition2": "Health",
+    "Condition2ID": "D006262",
+    "GutMicrobe": "Enterobacteriaceae",
+    "GutMicrobeID": "gm0282",
+    "GutMicrobeNcbiID": "543",
+    "Classification": "family",
+    "Alteration": "increase",
+    "SequencingTechnology": "16s rRNA gene sequencing"
+  },
+  {
+    "Index": "633",
+    "PMID": "22339879",
+    "ResearchType": "Gut microbiota associated with phenotype",
+    "HumanOrMouse": "Human",
+    "Condition1": "Diarrhea-Predominant Irritable Bowel Syndrome",
+    "Condition1ID": "*",
+    "Condition2": "Health",
+    "Condition2ID": "D006262",
+    "GutMicrobe": "Faecalibacterium",
+    "GutMicrobeID": "gm0326",
+    "GutMicrobeNcbiID": "216851",
+    "Classification": "genus",
+    "Alteration": "decrease",
+    "SequencingTechnology": "16s rRNA gene sequencing"
+  }
+]

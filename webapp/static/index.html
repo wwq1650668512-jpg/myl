@@ -164,6 +164,22 @@
               <span>生态回拉强度</span>
               <input id="ecologyStrengthInput" type="number" min="0" step="0.05" value="0.20" />
             </label>
+            <label class="field field-span-2">
+              <span>实验代谢分支</span>
+              <label class="checkbox-line">
+                <input id="experimentalMultiProductEnabledInput" type="checkbox" />
+                <span>启用多产物 + 后续再代谢实验分支，只追加 `experimental_*` 指标，不覆盖原始主分数。</span>
+              </label>
+              <div class="field-help">适合观察多代谢产物药物在 Step 3 里是否会把代谢负担进一步推高。</div>
+            </label>
+            <label class="field">
+              <span>实验分支强度</span>
+              <input id="experimentalBranchingScaleInput" type="number" min="0" step="0.05" value="0.35" />
+            </label>
+            <label class="field">
+              <span>二级再代谢率</span>
+              <input id="experimentalSecondaryMetabolismRateInput" type="number" min="0" step="0.05" value="0.10" />
+            </label>
           </div>
         </details>
 
@@ -184,29 +200,20 @@
           <h2>当前模型覆盖范围</h2>
         </div>
         <div id="bootstrapSummary" class="summary-grid"></div>
-        <div class="subpanel">
-          <h3>Step 3 Demo 排名</h3>
-          <div id="demoRanking" class="ranking-list"></div>
-        </div>
       </section>
 
       <section class="module-grid">
         <article class="panel module-panel">
           <div class="panel-head">
-            <span class="eyebrow step step-1">Step 1</span>
-            <h2>Drug -> Microbe Effect</h2>
+            <div>
+              <span class="eyebrow step step-1">Step 1</span>
+              <h2>Drug -> Microbe Effect</h2>
+            </div>
+            <div class="panel-head-actions">
+              <button class="button button-ghost" id="exportStep1Button">导出 Step 1 CSV</button>
+            </div>
           </div>
           <div id="step1PairStats" class="summary-grid compact"></div>
-          <div class="viz-layout">
-            <div class="viz-card">
-              <h3>当前药物对不同菌的影响强度</h3>
-              <div id="step1EffectBars" class="bars-card"></div>
-            </div>
-            <div class="viz-card">
-              <h3>面板摘要</h3>
-              <div id="step1PairDetails" class="detail-list"></div>
-            </div>
-          </div>
           <div class="table-card">
             <h3>All Microbe Effects</h3>
             <p class="table-hint">主表按菌名聚合展示（同名菌株已合并）；额外机制证据与 NT code 可在每行“查看证据”中展开。</p>
@@ -229,20 +236,15 @@
 
         <article class="panel module-panel">
           <div class="panel-head">
-            <span class="eyebrow step step-2">Step 2</span>
-            <h2>Microbe -> Drug Metabolism</h2>
+            <div>
+              <span class="eyebrow step step-2">Step 2</span>
+              <h2>Microbe -> Drug Metabolism</h2>
+            </div>
+            <div class="panel-head-actions">
+              <button class="button button-ghost" id="exportStep2Button">导出 Step 2 CSV</button>
+            </div>
           </div>
           <div id="step2PairStats" class="summary-grid compact"></div>
-          <div class="viz-layout">
-            <div class="viz-card">
-              <h3>当前药物在不同菌中的代谢概率</h3>
-              <div id="step2MetabolismBars" class="bars-card"></div>
-            </div>
-            <div class="viz-card">
-              <h3>面板摘要</h3>
-              <div id="step2PairDetails" class="detail-list"></div>
-            </div>
-          </div>
           <div class="table-card">
             <h3>All Microbe Metabolism Predictions</h3>
             <p class="table-hint">主表按菌名聚合展示（同名菌株已合并）；反应类/酶先验/基因证据与 NT code 可按行展开。</p>
@@ -277,9 +279,9 @@
           <div class="viz-card chart-card">
             <div class="card-title-row">
               <h3>动态轨迹</h3>
-              <span class="muted">Health / Parent Retention×100 / Development Score</span>
+              <span class="muted">Health / Parent Retention×100 / Development Score / Experimental Score</span>
             </div>
-            <canvas id="step3TrajectoryChart" height="320"></canvas>
+            <canvas id="step3TrajectoryChart" height="300"></canvas>
           </div>
           <div class="viz-card">
             <h3>场景对比</h3>

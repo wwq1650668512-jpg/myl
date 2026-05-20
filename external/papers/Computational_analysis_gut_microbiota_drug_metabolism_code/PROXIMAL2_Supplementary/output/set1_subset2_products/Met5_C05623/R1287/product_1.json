@@ -1,0 +1,41 @@
+{
+  "GeneratedProduct": [
+    {
+      "smiles": "CO",
+      "mol": "\n     RDKit          2D\n\n  2  1  0  0  0  0  0  0  0  0999 V2000\n    0.0000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n    1.2990    0.7500    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0\n  1  2  1  0\nM  END\n"
+    }
+  ],
+  "TemplateReaction": [
+    {
+      "ec": [
+        [
+          "3.2.1.21"
+        ]
+      ],
+      "ID": [
+        [
+          "RR-02-016aa3d5d25e437d-02-F_r",
+          "RR-02-016aa3d5d25e437d-04-F_r",
+          "RR-02-016aa3d5d25e437d-06-F_r",
+          "RR-02-016aa3d5d25e437d-08-F_r",
+          "RR-02-016aa3d5d25e437d-10-F_r",
+          "RR-02-016aa3d5d25e437d-12-F_r",
+          "RR-02-016aa3d5d25e437d-14-F_r",
+          "RR-02-016aa3d5d25e437d-16-F_r"
+        ]
+      ],
+      "Substrate": "MNXM61741",
+      "Product": "MNXM157"
+    }
+  ],
+  "QueryInformation": [
+    {
+      "name": "Isoquercetin",
+      "ID": "Met5_C05623",
+      "smiles": "O=c1c(O[C@@H]2O[C@H](CO)[C@@H](O)[C@H](O)[C@H]2O)c(-c2ccc(O)c(O)c2)oc2cc(O)cc(O)c12",
+      "reactionCenter(s)": [
+        8
+      ]
+    }
+  ]
+}

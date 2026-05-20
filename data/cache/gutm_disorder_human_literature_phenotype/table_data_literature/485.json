@@ -1,0 +1,50 @@
+[
+  {
+    "Index": "485",
+    "PMID": "27833384",
+    "ResearchType": "Gut microbiota associated with phenotype",
+    "HumanOrMouse": "Human",
+    "Condition1": "Colitis, Ulcerative;Proctocolectomy, Restorative",
+    "Condition1ID": "D003093;D016737",
+    "Condition2": "Health",
+    "Condition2ID": "D006262",
+    "GutMicrobe": "Clostridium perfringens",
+    "GutMicrobeID": "gm0206",
+    "GutMicrobeNcbiID": "1502",
+    "Classification": "species",
+    "Alteration": "increase",
+    "SequencingTechnology": "16s rRNA gene sequencing"
+  },
+  {
+    "Index": "485",
+    "PMID": "27833384",
+    "ResearchType": "Gut microbiota associated with phenotype",
+    "HumanOrMouse": "Human",
+    "Condition1": "Colitis, Ulcerative;Proctocolectomy, Restorative",
+    "Condition1ID": "D003093;D016737",
+    "Condition2": "Health",
+    "Condition2ID": "D006262",
+    "GutMicrobe": "Eubacterium rectale",
+    "GutMicrobeID": "gm1186",
+    "GutMicrobeNcbiID": "39491",
+    "Classification": "species",
+    "Alteration": "decrease",
+    "SequencingTechnology": "16s rRNA gene sequencing"
+  },
+  {
+    "Index": "485",
+    "PMID": "27833384",
+    "ResearchType": "Gut microbiota associated with phenotype",
+    "HumanOrMouse": "Human",
+    "Condition1": "Colitis, Ulcerative;Proctocolectomy, Restorative",
+    "Condition1ID": "D003093;D016737",
+    "Condition2": "Health",
+    "Condition2ID": "D006262",
+    "GutMicrobe": "Faecalibacterium prausnitzii",
+    "GutMicrobeID": "gm0327",
+    "GutMicrobeNcbiID": "853",
+    "Classification": "species",
+    "Alteration": "decrease",
+    "SequencingTechnology": "16s rRNA gene sequencing"
+  }
+]

@@ -1,0 +1,50 @@
+[
+  {
+    "Index": "104",
+    "PMID": "19235886",
+    "ResearchType": "Gut microbiota associated with phenotype",
+    "HumanOrMouse": "Human",
+    "Condition1": "Active ulcerative colitis",
+    "Condition1ID": "*",
+    "Condition2": "Health",
+    "Condition2ID": "D006265",
+    "GutMicrobe": "Bifidobacterium",
+    "GutMicrobeID": "gm0105",
+    "GutMicrobeNcbiID": "1678",
+    "Classification": "genus",
+    "Alteration": "decrease",
+    "SequencingTechnology": "16s rRNA gene sequencing"
+  },
+  {
+    "Index": "104",
+    "PMID": "19235886",
+    "ResearchType": "Gut microbiota associated with phenotype",
+    "HumanOrMouse": "Human",
+    "Condition1": "Active ulcerative colitis",
+    "Condition1ID": "*",
+    "Condition2": "Health",
+    "Condition2ID": "D006265",
+    "GutMicrobe": "Faecalibacterium prausnitzii",
+    "GutMicrobeID": "gm0327",
+    "GutMicrobeNcbiID": "853",
+    "Classification": "species",
+    "Alteration": "decrease",
+    "SequencingTechnology": "16s rRNA gene sequencing"
+  },
+  {
+    "Index": "104",
+    "PMID": "19235886",
+    "ResearchType": "Gut microbiota associated with phenotype",
+    "HumanOrMouse": "Human",
+    "Condition1": "Active ulcerative colitis",
+    "Condition1ID": "*",
+    "Condition2": "Health",
+    "Condition2ID": "D006265",
+    "GutMicrobe": "Firmicutes",
+    "GutMicrobeID": "gm0332",
+    "GutMicrobeNcbiID": "1239",
+    "Classification": "phylum",
+    "Alteration": "decrease",
+    "SequencingTechnology": "16s rRNA gene sequencing"
+  }
+]

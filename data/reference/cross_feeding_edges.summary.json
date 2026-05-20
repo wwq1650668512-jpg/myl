@@ -1,0 +1,12 @@
+{
+  "input_path": "/mnt/e/毕业/data/reference/promote_literature_seed_table.csv",
+  "output_path": "/mnt/e/毕业/data/reference/cross_feeding_edges.csv",
+  "extra_input_path": "/mnt/e/毕业/data/reference/cross_feeding_seed_template.csv",
+  "n_rows": 4,
+  "n_unique_consumers": 4,
+  "n_unique_producers": 3,
+  "evidence_level_counts": {
+    "high": 3,
+    "medium": 1
+  }
+}

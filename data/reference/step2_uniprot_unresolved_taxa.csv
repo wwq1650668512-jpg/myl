@@ -1,0 +1,7 @@
+nt_code,microbe_label,species_label,species_name,query_names,status
+NT5001,Bacteroides vulgatus,Bacteroides vulgatus,Bacteroides vulgatus (S1) DSM No.: 1447,Bacteroides vulgatus,no_protein_hits
+NT5006,Clostridium ramosum,Clostridium ramosum,Clostridium ramosum (S2) DSMZ 1402,Clostridium ramosum DSMZ 1402;Clostridium ramosum,not_found
+NT5009,Eubacterium rectale,Eubacterium rectale,Eubacterium rectale (S1) DSM No.: 17629,Eubacterium rectale,no_protein_hits
+NT5017,Veillonella parvula,Veillonella parvula,Veillonella parvula (S2) DSMZ 2008,Veillonella parvula DSMZ 2008;Veillonella parvula,no_project_enzyme_match
+NT5019,Prevotella copri,Prevotella copri,Prevotella copri (S1) DSMZ 18205,Prevotella copri DSMZ 18205;Prevotella copri,not_found
+NT5026,Clostridium bolteae,Clostridium bolteae,Clostridium bolteae (S1) DSM No.: 15670,Clostridium bolteae,no_protein_hits

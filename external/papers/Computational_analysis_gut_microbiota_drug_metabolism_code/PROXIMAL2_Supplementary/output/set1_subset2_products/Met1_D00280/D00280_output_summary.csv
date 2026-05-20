@@ -1,0 +1,4 @@
+,DrugName,DrugSmiles,EC,ReactionCenter,ProductSmiles,ProductInChiKey
+0,Clonazepam,O=[N+]([O-])c1ccc2c(c1)C(c1ccccc1Cl)=NCC(O)=N2,4.1.1.-,12,O=C(O)c1cccc(Cl)c1C1=NCC(O)=Nc2ccc([N+](=O)[O-])cc21,QZLVBRHHLUZMCF-UHFFFAOYSA-N
+1,Clonazepam,O=[N+]([O-])c1ccc2c(c1)C(c1ccccc1Cl)=NCC(O)=N2,1.7.1.-,4,Nc1ccc2c(c1)C(c1ccccc1Cl)=NCC(O)=N2,HEFRPWRJTGLSSV-UHFFFAOYSA-N
+2,Clonazepam,O=[N+]([O-])c1ccc2c(c1)C(c1ccccc1Cl)=NCC(O)=N2,1.7.1.-,4,ONc1ccc2c(c1)C(c1ccccc1Cl)=NCC(O)=N2,HGZYURMAFPBHKM-UHFFFAOYSA-N

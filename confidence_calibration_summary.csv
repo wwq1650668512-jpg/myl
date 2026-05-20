@@ -1,0 +1,6 @@
+row_type,confidence_tier,PASS,PARTIAL,FAIL,total,pass_rate,partial_rate,fail_rate,metric,value,n
+tier_distribution,high,0,0,0,0,,,,,,0
+tier_distribution,medium,3,1,0,4,0.75,0.25,0.0,,,4
+tier_distribution,low,3,2,0,5,0.6,0.4,0.0,,,5
+correlation,,,,,,,,,pearson_confidence_vs_correctness,0.13502799020771541,9
+correlation,,,,,,,,,spearman_confidence_vs_correctness,0.18814417367671946,9

@@ -1,0 +1,236 @@
+reference_id,source_sheet,disease_name,microbe_name_raw,microbe_name_cn,microbe_key,genus_hint,taxon_level,abundance_change_raw,abundance_shift,microbe_role_raw,microbe_role_in_disease,disease_effect_on_microbe,desired_step1_effect,relation_confidence,mechanism_note
+DMR_0001,microbe_to_disease,痔疮,Cyanobacteria 门,蓝藻门,cyanobacteria门,Cyanobacteria,phylum,↓ 减少,decrease,保护,protective,decrease,promote,high,"MR分析证实：蓝藻门丰度增加与痔疮风险降低相关（OR=0.947, P=2.10×10⁻³）"
+DMR_0002,microbe_to_disease,痔疮,Phascolarctobacterium,考拉杆菌属,phascolarctobacterium,Phascolarctobacterium,genus,↓ 减少,decrease,保护,protective,decrease,promote,high,"MR分析证实为保护性菌群（OR=0.960, P=0.034），产丙酸，具有抗炎作用"
+DMR_0003,microbe_to_disease,痔疮,FamilyXI,第十一家族（梭菌科）,familyxi,FamilyXI,family,↓ 减少,decrease,保护,protective,decrease,promote,high,"MR分析证实为保护性菌群（OR=0.974, P=0.027）"
+DMR_0004,microbe_to_disease,痔疮,Ruminococcaceae_UCG_002,瘤胃球菌科_UCG_002,ruminococcaceaeucg002,Ruminococcaceae_UCG_002,family,↑ 增加,increase,致病,risk,increase,inhibit,high,"MR分析证实为危险因素（OR=1.036, P=0.042）"
+DMR_0005,microbe_to_disease,痔疮,Peptostreptococcaceae 科,消化链球菌科,peptostreptococcaceae科,Peptostreptococcaceae,family,↑ 增加,increase,致病,risk,increase,inhibit,high,"MR分析证实为危险因素（OR=1.042, P=0.029）"
+DMR_0006,microbe_to_disease,痔疮,Oscillospira,颤螺旋菌属,oscillospira,Oscillospira,genus,↑ 增加,increase,致病,risk,increase,inhibit,high,"MR分析证实为危险因素（OR=1.048, P=0.026）；存在反向因果关联（痔疮亦可影响该菌）"
+DMR_0007,microbe_to_disease,痔疮,Alcaligenaceae 科,产碱菌科,alcaligenaceae科,Alcaligenaceae,family,↑ 增加,increase,致病,risk,increase,inhibit,high,"MR分析证实为危险因素（OR=1.048, P=0.036）"
+DMR_0008,microbe_to_disease,痔疮,Burkholderiales 目,伯克霍尔德氏菌目,burkholderiales目,Burkholderiales,order,↑ 增加,increase,致病,risk,increase,inhibit,high,"MR分析证实为危险因素（OR=1.074, P=6.50×10⁻³）"
+DMR_0009,microbe_to_disease,痔疮,Prevotella,普雷沃氏菌属,prevotella,Prevotella,genus,↑ 增加（血栓性痔疮）,increase,致病,risk,increase,inhibit,high,在血栓性痔疮患者中丰度高于非血栓性痔疮，提示可能参与血栓形成
+DMR_0010,microbe_to_disease,痔疮,Staphylococcus,葡萄球菌属,staphylococcus,Staphylococcus,genus,痔疮组织中富集,unknown,致病,risk,unknown,unknown,low,痔疮微生物组受皮肤菌群影响，葡萄球菌是皮肤来源的标志菌
+DMR_0011,microbe_to_disease,便秘（Constipation）,Bifidobacterium longum,长双歧杆菌,bifidobacteriumlongum,Bifidobacterium,species,↓ 减少,decrease,保护,protective,decrease,promote,high,含abfA基因簇，促进阿拉伯聚糖利用，产乙酸，改善肠道动力
+DMR_0012,microbe_to_disease,便秘（Constipation）,Lactiplantibacillus plantarum,植物乳杆菌,lactiplantibacillusplantarum,Lactiplantibacillus,species,↓ 减少,decrease,保护,protective,decrease,promote,high,调节胆汁酸代谢，促进肠道蠕动；临床有效率67%
+DMR_0013,microbe_to_disease,便秘（Constipation）,Lactobacillus bulgaricus,保加利亚乳杆菌,lactobacillusbulgaricus,Lactobacillus,species,↓ 减少,decrease,保护,protective,decrease,promote,high,与长双歧杆菌、嗜热链球菌协同改善STC
+DMR_0014,microbe_to_disease,便秘（Constipation）,Streptococcus thermophilus,嗜热链球菌,streptococcusthermophilus,Streptococcus,species,↓ 减少,decrease,保护,protective,decrease,promote,high,三菌联用（Golden Bifid）调节MAPK和5-HT信号通路
+DMR_0015,microbe_to_disease,便秘（Constipation）,Roseburia,罗氏菌属,roseburia,Roseburia,genus,↓ 减少,decrease,保护,protective,decrease,promote,high,产丁酸，与丁酸盐、乙酸盐水平正相关
+DMR_0016,microbe_to_disease,便秘（Constipation）,Faecalibacterium prausnitzii,普拉梭菌,faecalibacteriumprausnitzii,Faecalibacterium,species,↓ 减少,decrease,保护,protective,decrease,promote,high,产丁酸，抗炎；与便秘症状改善正相关（r=0.85）
+DMR_0017,microbe_to_disease,便秘（Constipation）,Acinetobacter,不动杆菌属,acinetobacter,Acinetobacter,genus,↓ 减少,decrease,保护,protective,decrease,promote,high,便秘患者中丰度降低
+DMR_0018,microbe_to_disease,便秘（Constipation）,Blautia,布劳特氏菌属,blautia,Blautia,genus,↓ 减少,decrease,保护,protective,decrease,promote,high,便秘患者中丰度降低
+DMR_0019,microbe_to_disease,便秘（Constipation）,Dorea formicigenerans,产甲酸多尔氏菌,doreaformicigenerans,Dorea,species,↓ 减少,decrease,保护,protective,decrease,promote,high,便秘患者中丰度降低
+DMR_0020,microbe_to_disease,便秘（Constipation）,Eubacterium ramulus,枝状真杆菌,eubacteriumramulus,Eubacterium,species,↓ 减少,decrease,保护,protective,decrease,promote,high,便秘患者中丰度降低
+DMR_0021,microbe_to_disease,便秘（Constipation）,Halomonas,盐单胞菌属,halomonas,Halomonas,genus,↓ 减少,decrease,保护,protective,decrease,promote,high,便秘患者中丰度降低
+DMR_0022,microbe_to_disease,便秘（Constipation）,Bifidobacterium longum,长双歧杆菌,bifidobacteriumlongum,Bifidobacterium,species,菌株特异性,unknown,双向,unknown,unknown,unknown,low,含abfA基因簇的菌株有效，不含则无效；有效菌株促进阿拉伯聚糖利用和乙酸产生
+DMR_0023,microbe_to_disease,便秘（Constipation）,Escherichia coli,大肠杆菌,escherichiacoli,Escherichia,species,菌株特异性,unknown,双向,unknown,unknown,unknown,low,健康对照组中特定菌株富集；但AIEC菌株具致病性
+DMR_0024,microbe_to_disease,便秘（Constipation）,Alistipes,另枝菌属,alistipes,Alistipes,genus,↑ 增加,increase,致病,risk,increase,inhibit,high,便秘患者（尤其是结肠传输延迟型）中富集
+DMR_0025,microbe_to_disease,便秘（Constipation）,Alistipes onderdonkii,翁氏另枝菌,alistipesonderdonkii,Alistipes,species,↑ 增加,increase,致病,risk,increase,inhibit,high,结肠传输延迟型便秘患者中关键菌
+DMR_0026,microbe_to_disease,便秘（Constipation）,Akkermansia,阿克曼菌属,akkermansia,Akkermansia,genus,↑ 增加,increase,致病,risk,increase,inhibit,high,便秘患者（结肠传输延迟型）中富集
+DMR_0027,microbe_to_disease,便秘（Constipation）,Oscillibacter,颤杆菌属,oscillibacter,Oscillibacter,genus,↑ 增加,increase,致病,risk,increase,inhibit,high,结肠传输延迟型便秘患者中富集
+DMR_0028,microbe_to_disease,便秘（Constipation）,Ruthenibacterium,鲁泰尼杆菌属,ruthenibacterium,Ruthenibacterium,genus,↑ 增加,increase,致病,risk,increase,inhibit,high,结肠传输延迟型便秘患者中关键菌
+DMR_0029,microbe_to_disease,便秘（Constipation）,Ruthenibacterium lactatiformans,产乳酸鲁泰尼杆菌,ruthenibacteriumlactatiformans,Ruthenibacterium,species,↑ 增加,increase,致病,risk,increase,inhibit,high,结肠传输延迟型便秘患者中关键菌
+DMR_0030,microbe_to_disease,便秘（Constipation）,Klebsiella pneumoniae,肺炎克雷伯菌,klebsiellapneumoniae,Klebsiella,species,↑ 增加,increase,致病,risk,increase,inhibit,high,结肠传输正常型便秘患者中关键菌
+DMR_0031,microbe_to_disease,便秘（Constipation）,Holdemanella,霍尔德曼氏菌属,holdemanella,Holdemanella,genus,↑ 增加,increase,致病,risk,increase,inhibit,high,便秘患者中丰度增加
+DMR_0032,microbe_to_disease,便秘（Constipation）,Parabacteroides,副拟杆菌属,parabacteroides,Parabacteroides,genus,↑ 增加,increase,致病,risk,increase,inhibit,high,便秘患者中丰度增加
+DMR_0033,microbe_to_disease,便秘（Constipation）,Pseudomonas,假单胞菌属,pseudomonas,Pseudomonas,genus,↑ 增加,increase,致病,risk,increase,inhibit,high,便秘患者中丰度增加
+DMR_0034,microbe_to_disease,便秘（Constipation）,Streptococcus,链球菌属,streptococcus,Streptococcus,genus,↑ 增加,increase,致病,risk,increase,inhibit,high,便秘患者中丰度增加
+DMR_0035,microbe_to_disease,便秘（Constipation）,Clostridium spp.（部分菌种）,梭菌属（部分菌种）,clostridiumspp部分菌种,Clostridium,genus,↑ 增加,increase,致病,risk,increase,inhibit,high,与便秘症状改善负相关（r=-0.8）
+DMR_0036,microbe_to_disease,便秘（Constipation）,Patescibacteria 门,帕特西杆菌门,patescibacteria门,Patescibacteria,phylum,↑ 增加,increase,致病,risk,increase,inhibit,high,STC大鼠模型中丰度增加，益生菌可逆转
+DMR_0037,microbe_to_disease,肛周脓肿（Anorectal Abscess）,Butyrivibrio,丁酸弧菌属,butyrivibrio,Butyrivibrio,genus,↓ 减少,decrease,保护,protective,decrease,promote,high,产丁酸，抗炎，降低肛周脓肿发生风险
+DMR_0038,microbe_to_disease,肛周脓肿（Anorectal Abscess）,Ruminiclostridium 5,瘤胃梭菌属-5,ruminiclostridium5,Ruminiclostridium,species,↓ 减少,decrease,保护,protective,decrease,promote,high,产短链脂肪酸，维持肠道稳态
+DMR_0039,microbe_to_disease,肛周脓肿（Anorectal Abscess）,Sutterella,萨特氏菌属,sutterella,Sutterella,genus,↓ 减少,decrease,保护,protective,decrease,promote,high,抗炎作用，与肠道健康相关
+DMR_0040,microbe_to_disease,肛周脓肿（Anorectal Abscess）,Ruminococcaceae UCG003,瘤胃球菌科UCG003,ruminococcaceaeucg003,Ruminococcaceae,family,↓ 减少,decrease,保护,protective,decrease,promote,high,产乙酸，维持肠道稳态；OR=0.61
+DMR_0041,microbe_to_disease,肛周脓肿（Anorectal Abscess）,Erysipelatoclostridium,丹毒梭菌属,erysipelatoclostridium,Erysipelatoclostridium,genus,↓ 减少,decrease,保护,protective,decrease,promote,high,抗炎相关；OR=0.68
+DMR_0042,microbe_to_disease,肛周脓肿（Anorectal Abscess）,Porphyromonadaceae,紫单胞菌科,porphyromonadaceae,Porphyromonadaceae,family,↑ 增加,increase,致病,risk,increase,inhibit,high,机会致病菌，促进炎症反应
+DMR_0043,microbe_to_disease,肛周脓肿（Anorectal Abscess）,Actinomyces,放线菌属,actinomyces,Actinomyces,genus,↑ 增加,increase,致病,risk,increase,inhibit,high,机会致病菌，与肛周感染相关
+DMR_0044,microbe_to_disease,肛周脓肿（Anorectal Abscess）,Faecalibacterium（特定菌株）,粪杆菌属（部分菌株）,faecalibacterium特定菌株,Faecalibacterium（特定菌株）,genus,↑ 增加,increase,致病,risk,increase,inhibit,high,特定条件下可促炎（与普拉梭菌作用相反）
+DMR_0045,microbe_to_disease,肛周脓肿（Anorectal Abscess）,Eubacterium brachy group,短真杆菌群,eubacteriumbrachygroup,Eubacterium,species,↑ 增加,increase,致病,risk,increase,inhibit,high,与肛周脓肿风险正相关；OR=1.41
+DMR_0046,microbe_to_disease,肛瘘（Anal Fistula）,Butyrivibrio,丁酸弧菌属,butyrivibrio,Butyrivibrio,genus,↓ 减少,decrease,保护,protective,decrease,promote,high,产丁酸，抗炎；OR=0.88
+DMR_0047,microbe_to_disease,肛瘘（Anal Fistula）,Ruminiclostridium 5,瘤胃梭菌属-5,ruminiclostridium5,Ruminiclostridium,species,↓ 减少,decrease,保护,protective,decrease,promote,high,产短链脂肪酸；OR=0.79
+DMR_0048,microbe_to_disease,肛瘘（Anal Fistula）,Erysipelotrichaceae UCG003,丹毒丝菌科UCG003,erysipelotrichaceaeucg003,Erysipelotrichaceae,family,↓ 减少,decrease,保护,protective,decrease,promote,high,维持肠道稳态；OR=0.82
+DMR_0049,microbe_to_disease,肛瘘（Anal Fistula）,Haemophilus,嗜血杆菌属,haemophilus,Haemophilus,genus,↓ 减少,decrease,保护,protective,decrease,promote,high,抗炎相关；OR=0.79
+DMR_0050,microbe_to_disease,肛瘘（Anal Fistula）,Alloprevotella,另普雷沃氏菌属,alloprevotella,Alloprevotella,genus,↓ 减少,decrease,保护,protective,decrease,promote,high,维持肠道稳态；OR=0.78
+DMR_0051,microbe_to_disease,肛瘘（Anal Fistula）,Escherichia-Shigella,埃希-志贺菌属,escherichiashigella,Escherichia-Shigella,genus,↓ 减少,decrease,保护,protective,decrease,promote,high,特定条件下有保护作用；OR=0.82
+DMR_0052,microbe_to_disease,肛瘘（Anal Fistula）,Catenibacterium,链状杆菌属,catenibacterium,Catenibacterium,genus,↑ 增加,increase,致病,risk,increase,inhibit,high,与肛瘘风险正相关；OR=1.22
+DMR_0053,microbe_to_disease,肛瘘（Anal Fistula）,Eubacterium ruminantium group,反刍真杆菌群,eubacteriumruminantiumgroup,Eubacterium,species,↑ 增加,increase,致病,risk,increase,inhibit,high,与肛瘘风险正相关；OR=1.17
+DMR_0054,microbe_to_disease,肛瘘（Anal Fistula）,Ruminococcus,瘤胃球菌属,ruminococcus,Ruminococcus,genus,↑ 增加,increase,致病,risk,increase,inhibit,high,肛瘘患者中富集，降解黏液
+DMR_0055,microbe_to_disease,肛瘘（Anal Fistula）,Bacteroides,拟杆菌属,bacteroides,Bacteroides,genus,↑ 增加,increase,致病,risk,increase,inhibit,high,肛瘘患者中富集
+DMR_0056,microbe_to_disease,肛瘘（Anal Fistula）,皮肤源性细菌,—,皮肤源性细菌,皮肤源性细菌,genus,检出,unknown,致病,risk,unknown,unknown,low,肛瘘瘘管中微生物部分来源于肛周皮肤（首次发现）
+DMR_0057,microbe_to_disease,炎症性肠病（IBD）,Faecalibacterium prausnitzii,普拉梭菌,faecalibacteriumprausnitzii,Faecalibacterium,species,↓ 减少,decrease,保护,protective,decrease,promote,high,产丁酸，抗炎，促进上皮修复；丰度与疾病活动度呈负相关
+DMR_0058,microbe_to_disease,炎症性肠病（IBD）,Roseburia spp.,罗氏菌属,roseburiaspp,Roseburia,genus,↓ 减少,decrease,保护,protective,decrease,promote,high,产丁酸，增加Treg细胞，调节免疫耐受
+DMR_0059,microbe_to_disease,炎症性肠病（IBD）,Phascolarctobacterium spp.,考拉杆菌属,phascolarctobacteriumspp,Phascolarctobacterium,genus,↓ 减少,decrease,保护,protective,decrease,promote,high,产丙酸，具有抗炎作用
+DMR_0060,microbe_to_disease,炎症性肠病（IBD）,Odoribacterium spp.,气味杆菌属,odoribacteriumspp,Odoribacterium,genus,↓ 减少,decrease,保护,protective,decrease,promote,high,参与上皮修复和炎症调控
+DMR_0061,microbe_to_disease,炎症性肠病（IBD）,Ruminococcaceae 科,瘤胃球菌科,ruminococcaceae科,Ruminococcaceae,family,↓ 减少,decrease,保护,protective,decrease,promote,high,产乙酸，维持肠道稳态
+DMR_0062,microbe_to_disease,炎症性肠病（IBD）,Lachnospiraceae 科,毛螺菌科,lachnospiraceae科,Lachnospiraceae,family,↓ 减少,decrease,保护,protective,decrease,promote,high,产短链脂肪酸，维持免疫稳态
+DMR_0063,microbe_to_disease,炎症性肠病（IBD）,Bifidobacterium spp.,双歧杆菌属,bifidobacteriumspp,Bifidobacterium,genus,↓ 减少,decrease,保护,protective,decrease,promote,high,维持免疫稳态，抑制病原体定植
+DMR_0064,microbe_to_disease,炎症性肠病（IBD）,Akkermansia muciniphila,嗜黏蛋白阿克曼菌,akkermansiamuciniphila,Akkermansia,species,↓ 减少,decrease,保护,protective,decrease,promote,high,降解粘蛋白，促进屏障功能；缓解期丰度高于活动期
+DMR_0065,microbe_to_disease,炎症性肠病（IBD）,Escherichia coli,大肠杆菌,escherichiacoli,Escherichia,species,↑ 增加,increase,致病,risk,increase,inhibit,high,粘附侵袭性大肠杆菌（AIEC），激活TLR4通路，触发炎症
+DMR_0066,microbe_to_disease,炎症性肠病（IBD）,Klebsiella pneumoniae,肺炎克雷伯菌,klebsiellapneumoniae,Klebsiella,species,↑ 增加,increase,致病,risk,increase,inhibit,high,机会致病菌，表达超广谱β-内酰胺酶，与病情加重相关
+DMR_0067,microbe_to_disease,炎症性肠病（IBD）,Klebsiella variicola,变栖克雷伯菌,klebsiellavariicola,Klebsiella,species,↑ 增加,increase,致病,risk,increase,inhibit,high,肠杆菌科成员，在IBD中显著富集
+DMR_0068,microbe_to_disease,炎症性肠病（IBD）,Klebsiella quasipneumoniae,准肺炎克雷伯菌,klebsiellaquasipneumoniae,Klebsiella,species,↑ 增加,increase,致病,risk,increase,inhibit,high,肠杆菌科成员，在IBD中显著富集
+DMR_0069,microbe_to_disease,炎症性肠病（IBD）,Proteus mirabilis,奇异变形菌,proteusmirabilis,Proteus,species,↑ 增加,increase,致病,risk,increase,inhibit,high,肠杆菌科成员，在IBD中显著富集
+DMR_0070,microbe_to_disease,炎症性肠病（IBD）,Citrobacter freundii,弗氏柠檬酸杆菌,citrobacterfreundii,Citrobacter,species,↑ 增加,increase,致病,risk,increase,inhibit,high,肠杆菌科成员，在IBD中显著富集
+DMR_0071,microbe_to_disease,炎症性肠病（IBD）,Citrobacter youngae,杨氏柠檬酸杆菌,citrobacteryoungae,Citrobacter,species,↑ 增加,increase,致病,risk,increase,inhibit,high,肠杆菌科成员，在IBD中显著富集
+DMR_0072,microbe_to_disease,炎症性肠病（IBD）,Enterobacteriaceae 科,肠杆菌科,enterobacteriaceae科,Enterobacteriaceae,family,↑ 增加,increase,致病,risk,increase,inhibit,high,整体丰度增加是菌群失调的核心标志，与炎症正相关
+DMR_0073,microbe_to_disease,炎症性肠病（IBD）,Enterococcus faecium,屎肠球菌,enterococcusfaecium,Enterococcus,species,↑ 增加,increase,致病,risk,increase,inhibit,high,携带多重耐药基因，在IBD中富集
+DMR_0074,microbe_to_disease,炎症性肠病（IBD）,Ruminococcus gnavus,活泼瘤胃球菌,ruminococcusgnavus,Ruminococcus,species,↑ 增加,increase,致病,risk,increase,inhibit,high,黏液降解菌，在IBD中增加
+DMR_0075,microbe_to_disease,炎症性肠病（IBD）,Clostridium spp.（部分菌种）,梭菌属（部分菌种）,clostridiumspp部分菌种,Clostridium,genus,↑ 增加,increase,致病,risk,increase,inhibit,high,某些梭菌与肠道炎症相关
+DMR_0076,microbe_to_disease,克罗恩病（CD）,Escherichia coli（AIEC）,粘附侵袭性大肠杆菌,escherichiacoliaiec,Escherichia,species,↑ 增加,increase,致病,risk,increase,inhibit,high,CD特征性致病菌，能穿透黏液层、侵袭上皮细胞
+DMR_0077,microbe_to_disease,克罗恩病（CD）,Klebsiella oxytoca,产酸克雷伯菌,klebsiellaoxytoca,Klebsiella,species,↑ 增加,increase,致病,risk,increase,inhibit,high,在CD队列中特异性富集，携带耐药基因
+DMR_0078,microbe_to_disease,克罗恩病（CD）,Morganella morganii,摩氏摩根菌,morganellamorganii,Morganella,species,↑ 增加,increase,致病,risk,increase,inhibit,high,在CD队列中特异性富集
+DMR_0079,microbe_to_disease,克罗恩病（CD）,Citrobacter amalonaticus,无丙二酸柠檬酸杆菌,citrobacteramalonaticus,Citrobacter,species,↑ 增加,increase,致病,risk,increase,inhibit,high,在CD队列中特异性富集
+DMR_0080,microbe_to_disease,克罗恩病（CD）,Listeria monocytogenes,单核细胞增生李斯特菌,listeriamonocytogenes,Listeria,species,检出,unknown,致病,risk,unknown,unknown,low,可在CD患者组织中检出，与肉芽肿反应相关
+DMR_0081,microbe_to_disease,克罗恩病（CD）,Bacteroides fragilis（产毒株）,脆弱拟杆菌（产肠毒素株）,bacteroidesfragilis产毒株,Bacteroides,species,↑ 增加,increase,致病,risk,increase,inhibit,high,分泌毒素，与EBV共感染及不良预后相关
+DMR_0082,microbe_to_disease,溃疡性结肠炎（UC）,Citrobacter portucalensis,葡萄牙柠檬酸杆菌,citrobacterportucalensis,Citrobacter,species,↑ 增加,increase,致病,risk,increase,inhibit,high,在UC队列中特异性富集
+DMR_0083,microbe_to_disease,溃疡性结肠炎（UC）,Citrobacter pasteurii,巴斯德柠檬酸杆菌,citrobacterpasteurii,Citrobacter,species,↑ 增加,increase,致病,risk,increase,inhibit,high,在UC队列中特异性富集
+DMR_0084,microbe_to_disease,溃疡性结肠炎（UC）,Citrobacter werkmanii,沃克曼柠檬酸杆菌,citrobacterwerkmanii,Citrobacter,species,↑ 增加,increase,致病,risk,increase,inhibit,high,在UC队列中特异性富集
+DMR_0085,microbe_to_disease,溃疡性结肠炎（UC）,Proteus hauseri,豪氏变形菌,proteushauseri,Proteus,species,↑ 增加,increase,致病,risk,increase,inhibit,high,在UC队列中特异性富集
+DMR_0086,microbe_to_disease,溃疡性结肠炎（UC）,Leuconostocaceae 科,明串珠菌科,leuconostocaceae科,Leuconostocaceae,family,↓ 减少,decrease,保护,protective,decrease,promote,high,产乙酸和乳酸的菌群，UC中减少
+DMR_0087,microbe_to_disease,结直肠癌（CRC）,Fusobacterium nucleatum,具核梭杆菌,fusobacteriumnucleatum,Fusobacterium,species,↑ 增加,increase,致病,risk,increase,inhibit,high,促进炎症和肿瘤发生，CRC核心致病菌
+DMR_0088,microbe_to_disease,结直肠癌（CRC）,Bacteroides fragilis（产毒株）,脆弱拟杆菌（产肠毒素株）,bacteroidesfragilis产毒株,Bacteroides,species,↑ 增加,increase,致病,risk,increase,inhibit,high,产肠毒素，促进炎症和肿瘤发生
+DMR_0089,microbe_to_disease,结直肠癌（CRC）,Parvimonas micra,微小微单胞菌,parvimonasmicra,Parvimonas,species,↑ 增加,increase,致病,risk,increase,inhibit,high,口腔来源的机会致病菌，在CRC中富集
+DMR_0090,microbe_to_disease,结直肠癌（CRC）,Peptostreptococcus anaerobius,厌氧消化链球菌,peptostreptococcusanaerobius,Peptostreptococcus,species,↑ 增加,increase,致病,risk,increase,inhibit,high,与CRC发生发展相关
+DMR_0091,microbe_to_disease,结直肠癌（CRC）,Streptococcus anginosus,咽峡炎链球菌,streptococcusanginosus,Streptococcus,species,↑ 增加,increase,致病,risk,increase,inhibit,high,与CRC相关
+DMR_0092,microbe_to_disease,结直肠癌（CRC）,Desulfovibrio desulfuricans,脱硫弧菌,desulfovibriodesulfuricans,Desulfovibrio,species,↑ 增加,increase,致病,risk,increase,inhibit,high,产硫化氢，具细胞毒性
+DMR_0093,microbe_to_disease,结直肠癌（CRC）,Escherichia coli（pks+菌株）,产colibactin大肠杆菌,escherichiacolipks菌株,Escherichia,species,↑ 增加,increase,致病,risk,increase,inhibit,high,携带聚酮合酶基因岛，产生colibactin致DNA损伤
+DMR_0094,microbe_to_disease,结直肠癌（CRC）,Clostridium symbiosum,共生梭菌,clostridiumsymbiosum,Clostridium,species,↑ 增加,increase,致病,risk,increase,inhibit,high,机会致病菌，CRC中富集
+DMR_0095,microbe_to_disease,结直肠癌（CRC）,Alistipes spp.（部分菌种）,另枝菌属（部分菌种）,alistipesspp部分菌种,Alistipes,genus,↑ 增加,increase,致病,risk,increase,inhibit,high,部分菌种在CRC中富集，作用待明确
+DMR_0096,microbe_to_disease,肠易激综合征（IBS）,整体菌群多样性,—,整体菌群多样性,整体菌群多样性,genus,↓ 减少,decrease,保护缺失,protective,decrease,promote,high,菌群多样性降低是IBS的常见特征
+DMR_0097,microbe_to_disease,肠易激综合征（IBS）,Methanobrevibacter spp.,甲烷短杆菌属,methanobrevibacterspp,Methanobrevibacter,genus,变化,unknown,双向,unknown,unknown,unknown,low,产甲烷古菌，与IBS便秘亚型相关
+DMR_0098,microbe_to_disease,系统性红斑狼疮（SLE）,Ruminococcus gnavus,活泼瘤胃球菌,ruminococcusgnavus,Ruminococcus,species,↑ 增加,increase,致病,risk,increase,inhibit,high,与狼疮肾炎（LN）疾病 flares 密切相关，在近半数 LN 患者 flares 期间出现肠道扩张（blooms）；表达高免疫原性脂聚糖，诱导血清IgG2抗体应答
+DMR_0099,microbe_to_disease,系统性红斑狼疮（SLE）,Veillonella spp.,韦荣球菌属,veillonellaspp,Veillonella,genus,↑ 增加,increase,致病,risk,increase,inhibit,high,在SLE患者肠道中出现短暂性扩张，可能源于口腔易位
+DMR_0100,microbe_to_disease,系统性红斑狼疮（SLE）,Fusobacterium spp.,梭杆菌属,fusobacteriumspp,Fusobacterium,genus,↑ 增加,increase,致病,risk,increase,inhibit,high,机会致病菌，在SLE患者肠道中出现短暂性扩张
+DMR_0101,microbe_to_disease,系统性红斑狼疮（SLE）,Akkermansia muciniphila,嗜黏蛋白阿克曼菌,akkermansiamuciniphila,Akkermansia,species,↓ 减少（治疗前）,decrease,保护,protective,decrease,promote,high,在SLE小鼠模型中，补充该菌可降低IL-6和IL-17，增加IL-10，恢复肠道屏障完整性，改善肾功能
+DMR_0102,microbe_to_disease,系统性红斑狼疮（SLE）,Lactobacillus plantarum,植物乳杆菌,lactobacillusplantarum,Lactobacillus,species,↓ 减少（治疗前）,decrease,保护,protective,decrease,promote,high,在SLE小鼠模型中，补充该菌可降低炎症因子，恢复肠道屏障，改善肾功能
+DMR_0103,microbe_to_disease,系统性红斑狼疮（SLE）,整体菌群多样性,—,整体菌群多样性,整体菌群多样性,genus,↓ 减少,decrease,保护,protective,decrease,promote,high,SLE患者肠道菌群α多样性降低，β多样性显著偏离健康对照，菌群时间稳定性差
+DMR_0104,microbe_to_disease,类风湿关节炎（RA）,Prevotella copri,普雷沃氏菌,prevotellacopri,Prevotella,species,↑ 增加,increase,致病,risk,increase,inhibit,high,在新发未治疗RA患者中显著富集；携带铁转运蛋白等毒力基因；联合高纤维饮食可致富马酸、琥珀酸过量产生，促进巨噬细胞炎症反应，加剧关节炎
+DMR_0105,microbe_to_disease,类风湿关节炎（RA）,Prevotella copri RA株,普雷沃氏菌RA株,prevotellacoprira株,Prevotella,species,↑ 增加,increase,致病,risk,increase,inhibit,high,从RA患者粪便中分离的特异性菌株，定植后加剧胶原诱导性关节炎（CIA）模型中的炎症
+DMR_0106,microbe_to_disease,类风湿关节炎（RA）,Bacteroides spp.,拟杆菌属,bacteroidesspp,Bacteroides,genus,↓ 减少,decrease,保护,protective,decrease,promote,high,维持肠道稳态的关键菌属，在RA患者中丰度降低
+DMR_0107,microbe_to_disease,类风湿关节炎（RA）,cluster XIV Clostridia,XIV族梭菌,clusterxivclostridia,cluster,species,↓ 减少,decrease,保护,protective,decrease,promote,high,产丁酸菌群，在RA患者中丰度降低，与免疫耐受维持相关
+DMR_0108,microbe_to_disease,多发性硬化（MS）,Bifidobacterium adolescentis,青春双歧杆菌,bifidobacteriumadolescentis,Bifidobacterium,species,↓ 减少,decrease,保护,protective,decrease,promote,high,与A. muciniphila的比值（BA:AM）降低是MS患者的微生物标志物，与疾病严重程度相关
+DMR_0109,microbe_to_disease,多发性硬化（MS）,Akkermansia muciniphila,嗜黏蛋白阿克曼菌,akkermansiamuciniphila,Akkermansia,species,↑ 增加（相对）,increase,致病（相对）,risk,increase,inhibit,high,BA:AM比值降低（即AM相对增多）是MS的微生物特征
+DMR_0110,microbe_to_disease,多发性硬化（MS）,Prevotella spp.,普雷沃氏菌属,prevotellaspp,Prevotella,genus,↓ 减少,decrease,保护,protective,decrease,promote,high,与免疫调节相关的菌属，在MS患者中减少
+DMR_0111,microbe_to_disease,多发性硬化（MS）,Pseudomonas spp.,假单胞菌属,pseudomonasspp,Pseudomonas,genus,↑ 增加,increase,致病,risk,increase,inhibit,high,与炎症信号相关的菌属，在MS患者中富集
+DMR_0112,microbe_to_disease,多发性硬化（MS）,Haemophilus spp.,嗜血杆菌属,haemophilusspp,Haemophilus,genus,↑ 增加,increase,致病,risk,increase,inhibit,high,在MS患者中富集
+DMR_0113,microbe_to_disease,多发性硬化（MS）,Blautia spp.,布劳特氏菌属,blautiaspp,Blautia,genus,↑ 增加,increase,致病,risk,increase,inhibit,high,在MS患者中富集
+DMR_0114,microbe_to_disease,多发性硬化（MS）,Dorea spp.,多雷亚菌属,doreaspp,Dorea,genus,↑ 增加,increase,致病,risk,increase,inhibit,high,在MS患者中富集
+DMR_0115,microbe_to_disease,多发性硬化（MS）,Parabacteroides spp.,副拟杆菌属,parabacteroidesspp,Parabacteroides,genus,↓ 减少,decrease,保护,protective,decrease,promote,high,在MS患者中减少
+DMR_0116,microbe_to_disease,多发性硬化（MS）,Adlercreutzia spp.,阿德勒克罗伊茨菌属,adlercreutziaspp,Adlercreutzia,genus,↓ 减少,decrease,保护,protective,decrease,promote,high,在MS患者中减少
+DMR_0117,microbe_to_disease,多发性硬化（MS）,Candida spp.,念珠菌属,candidaspp,Candida,genus,↑ 增加,increase,致病,risk,increase,inhibit,high,MS患者肠道真菌组中念珠菌属增加，真菌/细菌比值升高
+DMR_0118,microbe_to_disease,多发性硬化（MS）,Saccharomyces spp.,酵母菌属,saccharomycesspp,Saccharomyces,genus,↓ 减少,decrease,保护,protective,decrease,promote,high,MS患者肠道真菌组中酵母菌属减少
+DMR_0119,microbe_to_disease,吉兰-巴雷综合征（GBS）/实验性自身免疫性神经炎（EAN）,Lactobacillus rhamnosus GG,鼠李糖乳杆菌GG,lactobacillusrhamnosusgg,Lactobacillus,species,补充,unknown,保护,protective,unknown,unknown,low,在EAN大鼠模型中，该菌治疗可平衡CD4+/CD8+T细胞比例，降低IL-1β和TNF-α，修复肠道屏障，改善神经功能
+DMR_0120,disease_to_microbe,痔疮,Ruminococcaceae UCG 002,瘤胃球菌科UCG 002,ruminococcaceaeucg002,Ruminococcaceae,family,↑丰度增加,increase,促进,unknown,increase,inhibit,medium,痔疮局部炎症和菌群失调促进该菌增殖，MR证实为危险因素（OR=1.036，P=0.042） /
+DMR_0121,disease_to_microbe,痔疮,Peptostreptococcaceae 科,消化链球菌科,peptostreptococcaceae科,Peptostreptococcaceae,family,↑丰度增加,increase,促进,unknown,increase,inhibit,medium,痔疮疾病状态下丰度增加，MR证实为危险因素（OR=1.042，P=0.029）
+DMR_0122,disease_to_microbe,痔疮,Oscillospira,颤螺旋菌属,oscillospira,Oscillospira,genus,↑丰度增加,increase,促进,unknown,increase,inhibit,medium,MR证实为危险因素（OR=1.048，P=0.026）；存在反向因果关联，痔疮亦可影响该菌
+DMR_0123,disease_to_microbe,痔疮,Alcaligenaceae 科,产碱菌科,alcaligenaceae科,Alcaligenaceae,family,↑丰度增加,increase,促进,unknown,increase,inhibit,medium,MR证实为危险因素（OR=1.048，P=0.036）
+DMR_0124,disease_to_microbe,痔疮,Burkholderiales 目,伯克霍尔德氏菌目,burkholderiales目,Burkholderiales,order,↑丰度增加,increase,促进,unknown,increase,inhibit,medium,MR证实为危险因素（OR=1.074，P=0.0065）
+DMR_0125,disease_to_microbe,痔疮,Prevotella,普雷沃氏菌属,prevotella,Prevotella,genus,↑丰度增加（血栓性痔疮）,increase,促进,unknown,increase,inhibit,medium,痔疮血栓形成相关的炎症环境促进该菌增殖，在血栓性痔疮患者中丰度更高，提示可能参与血栓形成
+DMR_0126,disease_to_microbe,痔疮,Staphylococcus,葡萄球菌属,staphylococcus,Staphylococcus,genus,↑痔疮组织中富集,increase,促进,unknown,increase,inhibit,medium,痔疮脱出、皮肤屏障受损后，皮肤菌群逆行定植，痔疮微生物组受皮肤菌群影响
+DMR_0127,disease_to_microbe,痔疮,Cyanobacteria 门,蓝藻门,cyanobacteria门,Cyanobacteria,phylum,↓丰度减少,decrease,抑制,unknown,decrease,promote,medium,MR证实为保护性菌群，减少时痔疮风险增加（OR=0.947，P=0.0021）
+DMR_0128,disease_to_microbe,痔疮,Phascolarctobacterium,考拉杆菌属,phascolarctobacterium,Phascolarctobacterium,genus,↓丰度减少,decrease,抑制,unknown,decrease,promote,medium,产丙酸菌减少，抗炎作用减弱（OR=0.960，P=0.034）
+DMR_0129,disease_to_microbe,痔疮,Family XI（梭菌科）,第十一家族,familyxi梭菌科,Family,family,↓丰度减少,decrease,抑制,unknown,decrease,promote,medium,MR证实为保护性菌群（OR=0.974，P=0.027）
+DMR_0130,disease_to_microbe,便秘（Constipation）,Alistipes,另枝菌属,alistipes,Alistipes,genus,↑丰度增加,increase,促进,unknown,increase,inhibit,medium,慢传输型便秘相关的肠道动力障碍促进该菌增殖，慢性便秘患者中富集 /
+DMR_0131,disease_to_microbe,便秘（Constipation）,Holdemanella,霍尔德曼氏菌属,holdemanella,Holdemanella,genus,↑丰度增加,increase,促进,unknown,increase,inhibit,medium,便秘相关的肠道内容物滞留促进该菌增殖
+DMR_0132,disease_to_microbe,便秘（Constipation）,Parabacteroides,副拟杆菌属,parabacteroides,Parabacteroides,genus,↑丰度增加,increase,促进,unknown,increase,inhibit,medium,便秘相关的肠道内容物滞留促进该菌增殖
+DMR_0133,disease_to_microbe,便秘（Constipation）,Pseudomonas,假单胞菌属,pseudomonas,Pseudomonas,genus,↑丰度增加,increase,促进,unknown,increase,inhibit,medium,便秘相关的菌群失调促进机会致病菌增殖
+DMR_0134,disease_to_microbe,便秘（Constipation）,Patescibacteria 门,帕特西杆菌门,patescibacteria门,Patescibacteria,phylum,↑丰度增加,increase,促进,unknown,increase,inhibit,medium,慢传输便秘相关的肠道环境改变促进该菌增殖，益生菌干预后可逆转
+DMR_0135,disease_to_microbe,便秘（Constipation）,Bifidobacterium spp.,双歧杆菌属,bifidobacteriumspp,Bifidobacterium,genus,↓丰度减少,decrease,抑制,unknown,decrease,promote,medium,便秘相关的肠道动力障碍和内容物滞留抑制益生菌定植，IBS-C患者中丰度显著降低
+DMR_0136,disease_to_microbe,便秘（Constipation）,Megasphaera elsdenii,埃氏巨球形菌,megasphaeraelsdenii,Megasphaera,species,↓丰度减少,decrease,抑制,unknown,decrease,promote,medium,便秘相关的肠道环境抑制产短链脂肪酸菌，IBS-C患者中显著减少（P<0.05）
+DMR_0137,disease_to_microbe,便秘（Constipation）,Blautia,布劳特氏菌属,blautia,Blautia,genus,↓丰度减少,decrease,抑制,unknown,decrease,promote,medium,便秘相关的菌群失调抑制产丁酸菌
+DMR_0138,disease_to_microbe,便秘（Constipation）,Eubacterium ramulus,细枝真杆菌,eubacteriumramulus,Eubacterium,species,↓丰度减少,decrease,抑制,unknown,decrease,promote,medium,便秘相关的菌群失调抑制产丁酸菌
+DMR_0139,disease_to_microbe,肛周脓肿（Anorectal Abscess）,Actinomyces,放线菌属,actinomyces,Actinomyces,genus,↑丰度增加,increase,促进,unknown,increase,inhibit,medium,疾病状态下炎症环境促进机会致病菌定植；通过CD45⁺CD33⁻HLA-DR⁻免疫细胞介导约17.28%的致病效应 /
+DMR_0140,disease_to_microbe,肛周脓肿（Anorectal Abscess）,Porphyromonadaceae 科,紫单胞菌科,porphyromonadaceae科,Porphyromonadaceae,family,↑丰度增加,increase,促进,unknown,increase,inhibit,medium,疾病相关的炎症环境促进该科细菌生长，与炎症通路激活相关
+DMR_0141,disease_to_microbe,肛周脓肿（Anorectal Abscess）,Faecalibacterium,粪杆菌属,faecalibacterium,Faecalibacterium,genus,↑丰度增加,increase,促进,unknown,increase,inhibit,medium,肛周脓肿中该菌增加（与IBD中减少相反），提示疾病特异性菌群特征
+DMR_0142,disease_to_microbe,肛周脓肿（Anorectal Abscess）,Butyrivibrio,丁酸弧菌属,butyrivibrio,Butyrivibrio,genus,↓丰度减少,decrease,抑制,unknown,decrease,promote,medium,炎症环境抑制产丁酸菌的定植和存活，抗炎能力下降
+DMR_0143,disease_to_microbe,肛周脓肿（Anorectal Abscess）,Ruminiclostridium 5,瘤胃梭菌属-5,ruminiclostridium5,Ruminiclostridium,species,↓丰度减少,decrease,抑制,unknown,decrease,promote,medium,产短链脂肪酸菌群丰度降低，肠道稳态维持能力受损
+DMR_0144,disease_to_microbe,肛周脓肿（Anorectal Abscess）,Sutterella,萨特菌属,sutterella,Sutterella,genus,↓丰度减少,decrease,抑制,unknown,decrease,promote,medium,炎症环境抑制免疫调节相关菌群，与免疫调节功能下降相关
+DMR_0145,disease_to_microbe,肛瘘（Anal Fistula）,Actinomyces,放线菌属,actinomyces,Actinomyces,genus,↑丰度增加,increase,促进,unknown,increase,inhibit,medium,瘘管形成的炎症微环境促进该菌增殖，MR分析证实为肛瘘危险因素 /
+DMR_0146,disease_to_microbe,肛瘘（Anal Fistula）,Porphyromonadaceae 科,紫单胞菌科,porphyromonadaceae科,Porphyromonadaceae,family,↑丰度增加,increase,促进,unknown,increase,inhibit,medium,疾病相关炎症环境促进该科细菌生长，与炎症通路激活相关
+DMR_0147,disease_to_microbe,肛瘘（Anal Fistula）,Catenibacterium,链杆菌属,catenibacterium,Catenibacterium,genus,↑丰度增加,increase,促进,unknown,increase,inhibit,medium,MR分析显示使肛瘘风险增加22%（OR=1.22，P=0.042）
+DMR_0148,disease_to_microbe,肛瘘（Anal Fistula）,Eubacterium ruminantium 群,反刍真杆菌群,eubacteriumruminantium群,Eubacterium,species,↑丰度增加,increase,促进,unknown,increase,inhibit,medium,MR分析显示使肛瘘风险增加17%（OR=1.17，P=0.013）
+DMR_0149,disease_to_microbe,肛瘘（Anal Fistula）,肠道来源细菌（菌群易位）,—,肠道来源细菌菌群易位,肠道来源细菌（菌群易位）,genus,↑瘘管中富集,increase,促进,unknown,increase,inhibit,medium,疾病状态下肠道屏障受损，肠道细菌易位至瘘管组织，参与发病和持续存在
+DMR_0150,disease_to_microbe,肛瘘（Anal Fistula）,皮肤源性菌群（含Staphylococcus）,葡萄球菌属,皮肤源性菌群含staphylococcus,皮肤源性菌群（含Staphylococcus）,genus,↑瘘管中富集,increase,促进,unknown,increase,inhibit,medium,肛瘘形成后瘘管与皮肤相通，皮肤菌群逆行定植，首次证明皮肤菌群参与肛瘘发生
+DMR_0151,disease_to_microbe,肛瘘（Anal Fistula）,Butyrivibrio,丁酸弧菌属,butyrivibrio,Butyrivibrio,genus,↓丰度减少,decrease,抑制,unknown,decrease,promote,medium,疾病相关炎症和菌群失调抑制产丁酸菌，与肛瘘风险呈负相关（OR=0.88，P=0.006）
+DMR_0152,disease_to_microbe,肛瘘（Anal Fistula）,Ruminiclostridium 5,瘤胃梭菌属-5,ruminiclostridium5,Ruminiclostridium,species,↓丰度减少,decrease,抑制,unknown,decrease,promote,medium,产短链脂肪酸菌群丰度降低，MR证实为保护性菌群（OR=0.79，P=0.019）
+DMR_0153,disease_to_microbe,肛瘘（Anal Fistula）,Haemophilus,嗜血杆菌属,haemophilus,Haemophilus,genus,↓丰度减少,decrease,抑制,unknown,decrease,promote,medium,MR分析显示该菌减少与肛瘘风险增加相关（OR=0.79，P=0.005）
+DMR_0154,disease_to_microbe,肛瘘（Anal Fistula）,Alloprevotella,另普雷沃氏菌属,alloprevotella,Alloprevotella,genus,↓丰度减少,decrease,抑制,unknown,decrease,promote,medium,MR分析显示保护性菌群减少（OR=0.78，P=0.001）
+DMR_0155,disease_to_microbe,肛瘘（Anal Fistula）,Erysipelotrichaceae UCG003,丹毒丝菌科UCG003,erysipelotrichaceaeucg003,Erysipelotrichaceae,family,↓丰度减少,decrease,抑制,unknown,decrease,promote,medium,MR分析显示保护性菌群减少（OR=0.82，P=0.034）
+DMR_0156,disease_to_microbe,肛瘘（Anal Fistula）,Escherichia-Shigella,埃希-志贺菌属,escherichiashigella,Escherichia-Shigella,genus,↓丰度减少,decrease,抑制,unknown,decrease,promote,medium,肛瘘中减少（与IBD中增加相反），提示肛瘘与IBD的菌群变化模式存在差异
+DMR_0157,disease_to_microbe,腹泻（Diarrhea）,Escherichia/Shigella group,大肠杆菌/志贺菌群,escherichiashigellagroup,Escherichia,species,↑ 丰度显著增加,increase,促进（增加）,unknown,increase,inhibit,medium,兼性厌氧菌，在中重度腹泻患儿肠道中富集，与腹泻发生密切相关 腹泻状态下，肠道微生态发生显著失调，主要表现为兼性厌氧菌（致病菌）增加和专性厌氧菌（有益菌）减少。
+DMR_0158,disease_to_microbe,腹泻（Diarrhea）,Streptococcus mitis/pneumoniae group,缓症链球菌/肺炎链球菌群,streptococcusmitispneumoniaegroup,Streptococcus,species,↑ 丰度显著增加,increase,促进（增加）,unknown,increase,inhibit,medium,兼性厌氧菌，在腹泻患儿肠道中富集
+DMR_0159,disease_to_microbe,腹泻（Diarrhea）,Blautia spp.,布劳特氏菌属,blautiaspp,Blautia,genus,↓ 丰度显著降低,decrease,抑制（减少）,unknown,decrease,promote,medium,专性厌氧菌，产丁酸，具有抗炎作用
+DMR_0160,disease_to_microbe,腹泻（Diarrhea）,Prevotella spp.,普雷沃氏菌属,prevotellaspp,Prevotella,genus,↓ 丰度显著降低,decrease,抑制（减少）,unknown,decrease,promote,medium,专性厌氧菌，维持肠道稳态
+DMR_0161,disease_to_microbe,腹泻（Diarrhea）,Faecalibacterium spp.,粪杆菌属（含普拉梭菌）,faecalibacteriumspp,Faecalibacterium,genus,↓ 丰度显著降低,decrease,抑制（减少）,unknown,decrease,promote,medium,专性厌氧菌，产丁酸核心菌群，抗炎作用
+DMR_0162,disease_to_microbe,腹泻（Diarrhea）,Lachnospiraceae family,毛螺菌科,lachnospiraceaefamily,Lachnospiraceae,family,↓ 丰度显著降低,decrease,抑制（减少）,unknown,decrease,promote,medium,专性厌氧菌，产短链脂肪酸，维持肠道稳态
+DMR_0163,disease_to_microbe,腹泻（Diarrhea）,Ruminococcaceae family,瘤胃球菌科,ruminococcaceaefamily,Ruminococcaceae,family,↓ 丰度显著降低,decrease,抑制（减少）,unknown,decrease,promote,medium,专性厌氧菌，产短链脂肪酸
+DMR_0164,disease_to_microbe,腹泻（Diarrhea）,Bacteroides spp.,拟杆菌属,bacteroidesspp,Bacteroides,genus,↓ 丰度显著降低,decrease,抑制（减少）,unknown,decrease,promote,medium,共生优势菌减少是断奶后腹泻的生物标志物
+DMR_0165,disease_to_microbe,炎症性肠病（IBD）,Enterobacteriaceae family,肠杆菌科,enterobacteriaceaefamily,Enterobacteriaceae,family,↑ 显著增加,increase,促进（增加）,unknown,increase,inhibit,medium,兼性厌氧菌在炎症肠道中扩张，是菌群失调的核心标志 肠道炎症状态下，厌氧微环境被破坏，导致有益专性厌氧菌减少，兼性厌氧致病菌扩张。
+DMR_0166,disease_to_microbe,炎症性肠病（IBD）,Escherichia coli,大肠杆菌,escherichiacoli,Escherichia,species,↑ 显著增加,increase,促进（增加）,unknown,increase,inhibit,medium,兼性厌氧菌，在DSS结肠炎小鼠模型中丰度增加
+DMR_0167,disease_to_microbe,炎症性肠病（IBD）,Enterococcus faecalis,粪肠球菌,enterococcusfaecalis,Enterococcus,species,↑ 显著增加,increase,促进（增加）,unknown,increase,inhibit,medium,机会致病菌，在DSS结肠炎小鼠模型中丰度增加
+DMR_0168,disease_to_microbe,炎症性肠病（IBD）,Bacteroides acidifaciens,产酸拟杆菌,bacteroidesacidifaciens,Bacteroides,species,↓ 减少,decrease,抑制（减少）,unknown,decrease,promote,medium,产短链脂肪酸，在DSS结肠炎中被抑制，补充E. limosum可恢复其丰度
+DMR_0169,disease_to_microbe,炎症性肠病（IBD）,Bacteroides thetaiotaomicron,多形拟杆菌,bacteroidesthetaiotaomicron,Bacteroides,species,↓ 减少,decrease,抑制（减少）,unknown,decrease,promote,medium,优势共生菌，在炎症状态下减少，具有抑制病原体的能力
+DMR_0170,disease_to_microbe,炎症性肠病（IBD）,Phocaeicola vulgatus,普通拟杆菌,phocaeicolavulgatus,Phocaeicola,species,↓ 减少,decrease,抑制（减少）,unknown,decrease,promote,medium,原称Bacteroides vulgatus，产短链脂肪酸，在结肠炎中减少
+DMR_0171,disease_to_microbe,炎症性肠病（IBD）,Mucispirillum schaedleri,谢德氏黏液螺菌,mucispirillumschaedleri,Mucispirillum,species,↓ 减少,decrease,抑制（减少）,unknown,decrease,promote,medium,黏液相关菌，在结肠炎中减少
+DMR_0172,disease_to_microbe,炎症性肠病（IBD）,Akkermansia muciniphila,嗜黏蛋白阿克曼菌,akkermansiamuciniphila,Akkermansia,species,↓ 减少,decrease,抑制（减少）,unknown,decrease,promote,medium,黏液降解菌（保护性），在结肠炎中减少
+DMR_0173,disease_to_microbe,炎症性肠病（IBD）,Clostridium bolteae,博尔特梭菌,clostridiumbolteae,Clostridium,species,↓ 减少,decrease,抑制（减少）,unknown,decrease,promote,medium,毛螺菌科成员，绝对厌氧菌，在肠道炎症时丰度降低
+DMR_0174,disease_to_microbe,炎症性肠病（IBD）,Lachnospiraceae family,毛螺菌科,lachnospiraceaefamily,Lachnospiraceae,family,↓ 减少,decrease,抑制（减少）,unknown,decrease,promote,medium,绝对厌氧菌，产短链脂肪酸，在炎症状态下被抑制
+DMR_0175,disease_to_microbe,炎症性肠病（IBD）,Lactobacillaceae family,乳杆菌科,lactobacillaceaefamily,Lactobacillaceae,family,↑ 异常增加（后恢复）,increase,抑制（减少）,unknown,increase,inhibit,medium,在CAC小鼠中异常增加，W. cibaria干预后可恢复
+DMR_0176,disease_to_microbe,结直肠癌（CRC）,Fusobacterium nucleatum,具核梭杆菌,fusobacteriumnucleatum,Fusobacterium,species,↑ 显著增加,increase,促进（增加）,unknown,increase,inhibit,medium,CRC核心促癌菌，促进炎症和肿瘤发生 结直肠癌状态下，菌群结构发生显著重塑，促癌菌增加，产丁酸有益菌减少。
+DMR_0177,disease_to_microbe,结直肠癌（CRC）,Bacteroides fragilis（ETBF）,脆弱拟杆菌（产肠毒素株）,bacteroidesfragilisetbf,Bacteroides,species,↑ 显著增加,increase,促进（增加）,unknown,increase,inhibit,medium,产肠毒素，促进肿瘤发生
+DMR_0178,disease_to_microbe,结直肠癌（CRC）,Escherichia coli（pks+）,产colibactin大肠杆菌,escherichiacolipks,Escherichia,species,↑ 显著增加,increase,促进（增加）,unknown,increase,inhibit,medium,携带pks基因岛，产生colibactin致DNA损伤
+DMR_0179,disease_to_microbe,结直肠癌（CRC）,Porphyromonas gingivalis,牙龈卟啉单胞菌,porphyromonasgingivalis,Porphyromonas,species,↑ 增加,increase,促进（增加）,unknown,increase,inhibit,medium,口腔来源致病菌，与CRC相关
+DMR_0180,disease_to_microbe,结直肠癌（CRC）,Muribaculaceae sp.,穆里巴库拉科菌,muribaculaceaesp,Muribaculaceae,family,↑ 增加（后抑制）,increase,促进（增加）,unknown,increase,inhibit,medium,B. plebeius干预后可抑制该菌的促癌作用
+DMR_0181,disease_to_microbe,结直肠癌（CRC）,Closteridale sp.,梭菌目某些菌种,closteridalesp,Closteridale,genus,↑ 增加（后抑制）,increase,促进（增加）,unknown,increase,inhibit,medium,B. plebeius干预后可抑制
+DMR_0182,disease_to_microbe,结直肠癌（CRC）,Bilophila sp.,嗜胆菌属,bilophilasp,Bilophila,genus,↑ 增加（后抑制）,increase,促进（增加）,unknown,increase,inhibit,medium,B. plebeius干预后可抑制
+DMR_0183,disease_to_microbe,结直肠癌（CRC）,Bacteroides spp.（促炎株）,拟杆菌属某些菌种,bacteroidesspp促炎株,Bacteroides,genus,↑ 增加,increase,促进（增加）,unknown,increase,inhibit,medium,促炎性菌株，在CRC小鼠模型中增加，L. fermentum可抑制
+DMR_0184,disease_to_microbe,结直肠癌（CRC）,Clostridium butyricum,丁酸梭菌,clostridiumbutyricum,Clostridium,species,↓ 显著减少,decrease,抑制（减少）,unknown,decrease,promote,medium,产丁酸益生菌，在CRC患者中显著耗竭
+DMR_0185,disease_to_microbe,结直肠癌（CRC）,Blautia coccoides,球形布劳特氏菌,blautiacoccoides,Blautia,species,↓ 减少（后增加）,increase,抑制（减少）,unknown,increase,inhibit,medium,产丁酸有益菌，B. plebeius干预后可增加其丰度
+DMR_0186,disease_to_microbe,结直肠癌（CRC）,Akkermansia sp.,阿克曼菌属,akkermansiasp,Akkermansia,genus,↓ 减少（后抑制）,decrease,抑制（减少）,unknown,decrease,promote,medium,B. plebeius干预后进一步抑制（部分研究显示双向作用）
+DMR_0187,disease_to_microbe,结直肠癌（CRC）,Dubosiella sp.,杜博氏菌属,dubosiellasp,Dubosiella,genus,↓ 减少（后抑制）,decrease,抑制（减少）,unknown,decrease,promote,medium,B. plebeius干预后进一步抑制
+DMR_0188,disease_to_microbe,结直肠癌（CRC）,Lachnospiraceae NK4A136 group,毛螺菌科NK4A136群,lachnospiraceaenk4a136group,Lachnospiraceae,family,↓ 减少（后增加）,increase,抑制（减少）,unknown,increase,inhibit,medium,产短链脂肪酸菌，L. fermentum干预后可增加其丰度
+DMR_0189,disease_to_microbe,肠易激综合征（IBS）,Lactobacillus spp.,乳杆菌属,lactobacillusspp,Lactobacillus,genus,↓ 丰度降低,decrease,抑制（减少）,unknown,decrease,promote,medium,合生制剂干预后该菌丰度恢复 IBS状态下，菌群多样性降低，特定有益菌减少，致病菌/机会菌增加。
+DMR_0190,disease_to_microbe,肠易激综合征（IBS）,Akkermansia spp.,阿克曼菌属,akkermansiaspp,Akkermansia,genus,↓ 丰度降低,decrease,抑制（减少）,unknown,decrease,promote,medium,合生制剂干预后该菌丰度恢复
+DMR_0191,disease_to_microbe,肠易激综合征（IBS）,Helicobacter spp.,螺杆菌属,helicobacterspp,Helicobacter,genus,↑ 丰度增加,increase,促进（增加）,unknown,increase,inhibit,medium,机会致病菌，在IBS模型中增加，合生制剂干预后减少
+DMR_0192,disease_to_microbe,肠易激综合征（IBS）,Saccharibacteria (TM7),糖细菌门,saccharibacteriatm7,Saccharibacteria,species,↑ 丰度增加,increase,促进（增加）,unknown,increase,inhibit,medium,机会菌，在IBS模型中增加，合生制剂干预后减少
+DMR_0193,disease_to_microbe,类风湿关节炎（RA）,Prevotella copri,普雷沃氏菌,prevotellacopri,Prevotella,species,↑ 显著增加,increase,促进（增加）,unknown,increase,inhibit,medium,新发未治疗RA患者中特异性富集；携带铁转运蛋白等毒力基因；联合高纤维饮食可致琥珀酸过量，促进巨噬细胞炎症反应 /
+DMR_0194,disease_to_microbe,类风湿关节炎（RA）,Collinsella spp.,柯林斯菌属,collinsellaspp,Collinsella,genus,↑ 增加,increase,促进（增加）,unknown,increase,inhibit,medium,与RA发病相关，可诱导炎症反应
+DMR_0195,disease_to_microbe,类风湿关节炎（RA）,Klebsiella spp.,克雷伯菌属,klebsiellaspp,Klebsiella,genus,↑ 增加,increase,促进（增加）,unknown,increase,inhibit,medium,机会致病菌，RA患者肠道中富集
+DMR_0196,disease_to_microbe,类风湿关节炎（RA）,Escherichia spp.,埃希菌属,escherichiaspp,Escherichia,genus,↑ 增加,increase,促进（增加）,unknown,increase,inhibit,medium,肠杆菌科成员，RA患者中富集
+DMR_0197,disease_to_microbe,类风湿关节炎（RA）,Eggerthellales 目,埃格特菌目,eggerthellales目,Eggerthellales,order,↑ 增加,increase,促进（增加）,unknown,increase,inhibit,medium,RA患者肠道中富集
+DMR_0198,disease_to_microbe,类风湿关节炎（RA）,Faecalibacterium prausnitzii,普拉梭菌,faecalibacteriumprausnitzii,Faecalibacterium,species,↓ 显著减少,decrease,抑制（减少）,unknown,decrease,promote,medium,产丁酸核心菌，具有抗炎作用；在RA患者中持续耗竭
+DMR_0199,disease_to_microbe,类风湿关节炎（RA）,Bacteroides spp.,拟杆菌属,bacteroidesspp,Bacteroides,genus,↓ 减少,decrease,抑制（减少）,unknown,decrease,promote,medium,维持肠道稳态的关键菌属，RA患者中丰度降低
+DMR_0200,disease_to_microbe,类风湿关节炎（RA）,Fusicatenibacter spp.,纺锤链杆菌属,fusicatenibacterspp,Fusicatenibacter,genus,↓ 减少,decrease,抑制（减少）,unknown,decrease,promote,medium,RA患者中丰度降低
+DMR_0201,disease_to_microbe,类风湿关节炎（RA）,Megamonas spp.,巨单胞菌属,megamonasspp,Megamonas,genus,↓ 减少,decrease,抑制（减少）,unknown,decrease,promote,medium,RA患者中丰度降低
+DMR_0202,disease_to_microbe,类风湿关节炎（RA）,Clostridium cluster XIV,XIV族梭菌,clostridiumclusterxiv,Clostridium,species,↓ 减少,decrease,抑制（减少）,unknown,decrease,promote,medium,产丁酸菌群，RA患者中丰度降低
+DMR_0203,disease_to_microbe,系统性红斑狼疮（SLE）,Ruminococcus gnavus,活泼瘤胃球菌,ruminococcusgnavus,Ruminococcus,species,↑ 显著增加,increase,促进（增加）,unknown,increase,inhibit,medium,与狼疮肾炎（LN）疾病发作强相关；表达高免疫原性脂聚糖，诱导血清IgG2抗体应答 /
+DMR_0204,disease_to_microbe,系统性红斑狼疮（SLE）,Streptococcus spp.,链球菌属,streptococcusspp,Streptococcus,genus,↑ 显著增加,increase,促进（增加）,unknown,increase,inhibit,medium,SLE患者中富集，狼疮肾炎患者中极度富集
+DMR_0205,disease_to_microbe,系统性红斑狼疮（SLE）,Veillonella spp.,韦荣球菌属,veillonellaspp,Veillonella,genus,↑ 增加,increase,促进（增加）,unknown,increase,inhibit,medium,SLE患者肠道中出现短暂性扩张，可能源于口腔易位
+DMR_0206,disease_to_microbe,系统性红斑狼疮（SLE）,Clostridium (cluster XI),梭菌属（XI族）,clostridiumclusterxi,Clostridium,species,↑ 增加,increase,促进（增加）,unknown,increase,inhibit,medium,SLE患者中特定梭菌群增加
+DMR_0207,disease_to_microbe,系统性红斑狼疮（SLE）,Rothia spp.,罗氏菌属,rothiaspp,Rothia,genus,↑ 增加,increase,促进（增加）,unknown,increase,inhibit,medium,SLE患者肠道中富集
+DMR_0208,disease_to_microbe,系统性红斑狼疮（SLE）,Pseudomonadota 门,假单胞菌门（原变形菌门）,pseudomonadota门,Pseudomonadota,phylum,↑ 增加,increase,促进（增加）,unknown,increase,inhibit,medium,SLE患者中丰度升高（3.81% → 6.80%）
+DMR_0209,disease_to_microbe,系统性红斑狼疮（SLE）,Bacteroidota 门,拟杆菌门,bacteroidota门,Bacteroidota,phylum,↓ 减少,decrease,抑制（减少）,unknown,decrease,promote,medium,SLE患者中丰度降低（53.42% → 38.04%）
+DMR_0210,disease_to_microbe,系统性红斑狼疮（SLE）,Firmicutes 门,厚壁菌门,firmicutes门,Firmicutes,phylum,↓ 减少,decrease,抑制（减少）,unknown,decrease,promote,medium,SLE患者中丰度降低
+DMR_0211,disease_to_microbe,系统性红斑狼疮（SLE）,Faecalibacterium prausnitzii,普拉梭菌,faecalibacteriumprausnitzii,Faecalibacterium,species,↓ 减少,decrease,抑制（减少）,unknown,decrease,promote,medium,产丁酸抗炎菌，SLE患者中耗竭
+DMR_0212,disease_to_microbe,系统性红斑狼疮（SLE）,Acidobacteria 门,酸杆菌门,acidobacteria门,Acidobacteria,phylum,↓ 减少,decrease,抑制（减少）,unknown,decrease,promote,medium,SLE患者中丰度降低
+DMR_0213,disease_to_microbe,系统性红斑狼疮（SLE）,Lactobacillus spp.（部分菌种）,乳杆菌属,lactobacillusspp部分菌种,Lactobacillus,genus,↓ 减少（某些菌种）,decrease,抑制（减少）,unknown,decrease,promote,medium,SLE患者中特定乳杆菌减少
+DMR_0214,disease_to_microbe,多发性硬化（MS）,Blautia wexlerae,韦氏布劳特氏菌,blautiawexlerae,Blautia,species,↑ 显著增加,increase,促进（增加）,unknown,increase,inhibit,medium,MS患者微生物群落的核心驱动菌；给小鼠施用该菌可增加肠道炎症标志物，降低Bifidobacterium/Akkermansia比值，与疾病严重程度相关 /
+DMR_0215,disease_to_microbe,多发性硬化（MS）,Blautia spp.,布劳特氏菌属,blautiaspp,Blautia,genus,↑ 显著增加,increase,促进（增加）,unknown,increase,inhibit,medium,MS患者肠道中显著富集
+DMR_0216,disease_to_microbe,多发性硬化（MS）,Akkermansia muciniphila,嗜黏蛋白阿克曼菌,akkermansiamuciniphila,Akkermansia,species,↑ 相对增加,increase,促进（增加）,unknown,increase,inhibit,medium,MS患者中Bifidobacterium adolescentis/Akkermansia muciniphila比值降低，AM相对丰度升高是MS的微生物特征
+DMR_0217,disease_to_microbe,多发性硬化（MS）,Pseudomonas spp.,假单胞菌属,pseudomonasspp,Pseudomonas,genus,↑ 增加,increase,促进（增加）,unknown,increase,inhibit,medium,与炎症信号相关，MS患者中富集
+DMR_0218,disease_to_microbe,多发性硬化（MS）,Haemophilus spp.,嗜血杆菌属,haemophilusspp,Haemophilus,genus,↑ 增加,increase,促进（增加）,unknown,increase,inhibit,medium,MS患者中富集
+DMR_0219,disease_to_microbe,多发性硬化（MS）,Dorea spp.,多雷亚菌属,doreaspp,Dorea,genus,↑ 增加,increase,促进（增加）,unknown,increase,inhibit,medium,MS患者中富集
+DMR_0220,disease_to_microbe,多发性硬化（MS）,Candida spp.,念珠菌属,candidaspp,Candida,genus,↑ 增加,increase,促进（增加）,unknown,increase,inhibit,medium,MS患者肠道真菌组中念珠菌属增加，真菌/细菌比值升高
+DMR_0221,disease_to_microbe,多发性硬化（MS）,Bifidobacterium adolescentis,青春双歧杆菌,bifidobacteriumadolescentis,Bifidobacterium,species,↓ 显著减少,decrease,抑制（减少）,unknown,decrease,promote,medium,BA:AM比值降低是MS的微生物标志物，与疾病严重程度相关
+DMR_0222,disease_to_microbe,多发性硬化（MS）,Prevotella copri,普雷沃氏菌,prevotellacopri,Prevotella,species,↓ 减少,decrease,抑制（减少）,unknown,decrease,promote,medium,健康对照组微生物群落的核心驱动菌，MS患者中减少
+DMR_0223,disease_to_microbe,多发性硬化（MS）,Prevotella spp.,普雷沃氏菌属,prevotellaspp,Prevotella,genus,↓ 减少,decrease,抑制（减少）,unknown,decrease,promote,medium,与免疫调节相关，MS患者中减少
+DMR_0224,disease_to_microbe,多发性硬化（MS）,Parabacteroides spp.,副拟杆菌属,parabacteroidesspp,Parabacteroides,genus,↓ 减少,decrease,抑制（减少）,unknown,decrease,promote,medium,MS患者中减少
+DMR_0225,disease_to_microbe,多发性硬化（MS）,Adlercreutzia spp.,阿德勒克罗伊茨菌属,adlercreutziaspp,Adlercreutzia,genus,↓ 减少,decrease,抑制（减少）,unknown,decrease,promote,medium,MS患者中减少
+DMR_0226,disease_to_microbe,多发性硬化（MS）,Saccharomyces spp.,酵母菌属,saccharomycesspp,Saccharomyces,genus,↓ 减少,decrease,抑制（减少）,unknown,decrease,promote,medium,MS患者肠道真菌组中酵母菌属减少
+DMR_0227,disease_to_microbe,多发性硬化（MS）,Faecalibacterium prausnitzii,普拉梭菌,faecalibacteriumprausnitzii,Faecalibacterium,species,↓ 减少,decrease,抑制（减少）,unknown,decrease,promote,medium,产丁酸抗炎菌，MS患者中耗竭
+DMR_0228,disease_to_microbe,吉兰-巴雷综合征（GBS）/实验性自身免疫性神经炎（EAN）,菌群失调（整体）,—,菌群失调整体,菌群失调（整体）,genus,↑ 菌群紊乱,increase,促进（增加）,unknown,increase,inhibit,medium,EAN大鼠模型中肠道菌群和代谢物失衡 /
+DMR_0229,disease_to_microbe,吉兰-巴雷综合征（GBS）/实验性自身免疫性神经炎（EAN）,保护性菌群（未明确具体菌种）,—,保护性菌群未明确具体菌种,保护性菌群（未明确具体菌种）,genus,↓ 减少,decrease,抑制（减少）,unknown,decrease,promote,medium,EAN大鼠模型中菌群结构改变，LGG治疗可部分恢复
+DMR_0230,disease_to_microbe,吉兰-巴雷综合征（GBS）/实验性自身免疫性神经炎（EAN）,Lactobacillus rhamnosus GG,鼠李糖乳杆菌GG,lactobacillusrhamnosusgg,Lactobacillus,species,外源补充保护,unknown,治疗可恢复,unknown,unknown,unknown,low,LGG治疗可平衡CD4+/CD8+ T细胞比例，降低IL-1β和TNF-α，修复肠道屏障，改善神经功能
+DMR_0231,disease_to_microbe,自身免疫性肝炎（AIH）,Veillonella spp.,韦荣球菌属,veillonellaspp,Veillonella,genus,↑ 增加,increase,促进（增加）,unknown,increase,inhibit,medium,AIH患者肠道中富集 /
+DMR_0232,disease_to_microbe,自身免疫性肝炎（AIH）,Bifidobacterium spp.,双歧杆菌属,bifidobacteriumspp,Bifidobacterium,genus,↓ 减少,decrease,抑制（减少）,unknown,decrease,promote,medium,AIH患者肠道中减少
+DMR_0233,disease_to_microbe,自身免疫性甲状腺疾病（AITD）,Firmicutes 门,厚壁菌门,firmicutes门,Firmicutes,phylum,↓ 减少,decrease,抑制（减少）,unknown,decrease,promote,medium,甲减患者中厚壁菌门减少 /
+DMR_0234,disease_to_microbe,自身免疫性甲状腺疾病（AITD）,Bifidobacterium spp.,双歧杆菌属,bifidobacteriumspp,Bifidobacterium,genus,↓ 减少,decrease,抑制（减少）,unknown,decrease,promote,medium,甲亢患者中双歧杆菌减少
+DMR_0235,disease_to_microbe,自身免疫性甲状腺疾病（AITD）,Lactobacillus spp.,乳杆菌属,lactobacillusspp,Lactobacillus,genus,↓ 减少,decrease,抑制（减少）,unknown,decrease,promote,medium,甲亢患者中乳杆菌减少

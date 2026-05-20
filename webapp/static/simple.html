@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Gut Predictor Simple</title>
+    <link rel="stylesheet" href="/simple.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero">
+        <div>
+          <span class="eyebrow">Simple Web</span>
+          <h1>三步预测极简版</h1>
+          <p>只保留输入药物后最核心的 Step 1 / Step 2 / Step 3 分数与少量摘要，适合部署到服务器供直接使用。</p>
+        </div>
+        <a class="ghost-link" href="/index.html">查看完整版</a>
+      </section>
+
+      <section class="panel controls">
+        <div class="mode-switch" id="modeSwitch">
+          <button class="mode-button active" id="libraryModeButton" type="button">库内药物</button>
+          <button class="mode-button" id="customModeButton" type="button">自定义 SMILES</button>
+        </div>
+
+        <div class="form-grid" id="libraryFields">
+          <label class="field field-span-2">
+            <span>药物筛选</span>
+            <input id="drugFilterInput" type="text" placeholder="输入药物名或 Prestwick ID" />
+          </label>
+          <label class="field field-span-2">
+            <span>药物</span>
+            <select id="drugSelect"></select>
+          </label>
+        </div>
+
+        <div class="form-grid hidden" id="customFields">
+          <label class="field">
+            <span>药物名称</span>
+            <input id="customDrugNameInput" type="text" placeholder="可选" />
+          </label>
+          <label class="field field-span-3">
+            <span>SMILES</span>
+            <textarea id="customSmilesInput" rows="3" placeholder="例如：CC(=O)Oc1ccccc1C(=O)O"></textarea>
+          </label>
+        </div>
+
+        <div class="form-grid compact-grid">
+          <label class="field">
+            <span>Step 3 场景</span>
+            <select id="scenarioSelect"></select>
+          </label>
+          <label class="field">
+            <span>时间步数</span>
+            <input id="nStepsInput" type="number" min="3" max="60" value="14" />
+          </label>
+          <label class="field">
+            <span>初始剂量</span>
+            <input id="initialDoseInput" type="number" min="0" step="0.1" value="1.0" />
+          </label>
+          <label class="field">
+            <span>重复剂量</span>
+            <input id="repeatDoseInput" type="number" min="0" step="0.1" value="1.0" />
+          </label>
+        </div>
+
+        <div class="actions">
+          <button class="primary-button" id="runButton" type="button">运行三步预测</button>
+          <span class="status-text" id="statusText">正在加载药物与场景列表…</span>
+        </div>
+      </section>
+
+      <section class="panel summary-panel">
+        <div class="panel-head">
+          <div>
+            <span class="eyebrow">Drug</span>
+            <h2>当前药物</h2>
+          </div>
+        </div>
+        <div class="drug-summary" id="drugSummary"></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <span class="eyebrow">Step 1</span>
+            <h2>Drug -> Microbe</h2>
+          </div>
+        </div>
+        <div class="stat-grid" id="step1Stats"></div>
+        <div class="mini-grid">
+          <div class="mini-panel">
+            <h3>标签分布</h3>
+            <div id="step1Counts" class="tag-row"></div>
+          </div>
+          <div class="mini-panel">
+            <h3>影响最强的菌</h3>
+            <div id="step1TopList" class="list-block"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <span class="eyebrow">Step 2</span>
+            <h2>Microbe -> Drug</h2>
+          </div>
+        </div>
+        <div class="stat-grid" id="step2Stats"></div>
+        <div class="mini-grid">
+          <div class="mini-panel">
+            <h3>代谢标签分布</h3>
+            <div id="step2Counts" class="tag-row"></div>
+          </div>
+          <div class="mini-panel">
+            <h3>代谢概率最高的菌</h3>
+            <div id="step2TopList" class="list-block"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <span class="eyebrow">Step 3</span>
+            <h2>Community Simulation</h2>
+          </div>
+        </div>
+        <div class="stat-grid" id="step3Stats"></div>
+        <div class="mini-grid">
+          <div class="mini-panel">
+            <h3>模拟设置</h3>
+            <div id="step3Meta" class="list-block"></div>
+          </div>
+          <div class="mini-panel">
+            <h3>变化最大的菌</h3>
+            <div id="step3TopList" class="list-block"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="/simple.js"></script>
+  </body>
+</html>

@@ -1,0 +1,7 @@
+,DrugName,DrugSmiles,EC,ReactionCenter,ProductSmiles,ProductInChiKey
+0,Albiflorin,C[C@]12C[C@@H](O)[C@@H]3C[C@@]1(O[C@@H]1O[C@H](CO)[C@@H](O)[C@H](O)[C@H]1O)[C@]3(COC(=O)c1ccccc1)C(=O)O2,3.2.1.21,13,CO,OKKJLVBELUTLKV-UHFFFAOYSA-N
+1,Albiflorin,C[C@]12C[C@@H](O)[C@@H]3C[C@@]1(O[C@@H]1O[C@H](CO)[C@@H](O)[C@H](O)[C@H]1O)[C@]3(COC(=O)c1ccccc1)C(=O)O2,3.2.1.37,5,O=CC(O)C(O)C(O)CO,PYMYPHUHKUWMLA-UHFFFAOYSA-N
+2,Albiflorin,C[C@]12C[C@@H](O)[C@@H]3C[C@@]1(O[C@@H]1O[C@H](CO)[C@@H](O)[C@H](O)[C@H]1O)[C@]3(COC(=O)c1ccccc1)C(=O)O2,3.2.1.31,5,O=CC(O)C(O)C(O)CO,PYMYPHUHKUWMLA-UHFFFAOYSA-N
+3,Albiflorin,C[C@]12C[C@@H](O)[C@@H]3C[C@@]1(O[C@@H]1O[C@H](CO)[C@@H](O)[C@H](O)[C@H]1O)[C@]3(COC(=O)c1ccccc1)C(=O)O2,3.2.1.55,5,O=CC(O)C(O)C(O)CO,PYMYPHUHKUWMLA-UHFFFAOYSA-N
+4,Albiflorin,C[C@]12C[C@@H](O)[C@@H]3C[C@@]1(O[C@@H]1O[C@H](CO)[C@@H](O)[C@H](O)[C@H]1O)[C@]3(COC(=O)c1ccccc1)C(=O)O2,3.2.1.117,14,CC12CC(O)C3CC1(OC1OC(COC4OC(CO)C(O)C(O)C4O)C(O)C(O)C1O)C3(COC(=O)c1ccccc1)C(=O)O2,BCDCKOSFGPWIIZ-UHFFFAOYSA-N
+5,Albiflorin,C[C@]12C[C@@H](O)[C@@H]3C[C@@]1(O[C@@H]1O[C@H](CO)[C@@H](O)[C@H](O)[C@H]1O)[C@]3(COC(=O)c1ccccc1)C(=O)O2,3.2.1.21,14,CC12CC(O)C3CC1(OC1OC(COC4OC(CO)C(O)C(O)C4O)C(O)C(O)C1O)C3(COC(=O)c1ccccc1)C(=O)O2,BCDCKOSFGPWIIZ-UHFFFAOYSA-N

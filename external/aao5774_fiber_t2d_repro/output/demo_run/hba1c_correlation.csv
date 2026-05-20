@@ -1,0 +1,4 @@
+metric,target,spearman_rho,p_value
+scfa_relative_abundance,hba1c_change,-0.7600712181471058,0.004117380355680861
+scfa_richness,hba1c_change,,
+detrimental_relative_abundance,hba1c_change,0.8148464979493787,0.0012444161000958183

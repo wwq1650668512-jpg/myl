@@ -1,0 +1,7 @@
+,DrugName,DrugSmiles,EC,ReactionCenter,ProductSmiles,ProductInChiKey
+0,Chloramphenicol,O=[N+]([O-])c1ccc([C@@H](O)[C@@H](CO)N=C(O)C(Cl)Cl)cc1,1.7.1.-,4,O=Nc1ccc(C(O)C(CO)/N=C(\O)C(Cl)Cl)cc1,YEYNNMGBNJOTRQ-UHFFFAOYSA-N
+1,Chloramphenicol,O=[N+]([O-])c1ccc([C@@H](O)[C@@H](CO)N=C(O)C(Cl)Cl)cc1,3.2.1.22,12,O=[N+]([O-])c1ccc(C(O)C(COC2OC(CO)C(O)C(O)C2O)/N=C(\O)C(Cl)Cl)cc1,APNJPGQQUGNBMU-UHFFFAOYSA-N
+2,Chloramphenicol,O=[N+]([O-])c1ccc([C@@H](O)[C@@H](CO)N=C(O)C(Cl)Cl)cc1,3.2.1.-,12,O=[N+]([O-])c1ccc(C(O)C(COC2OC(CO)C(O)C(O)C2O)/N=C(\O)C(Cl)Cl)cc1,APNJPGQQUGNBMU-UHFFFAOYSA-N
+3,Chloramphenicol,O=[N+]([O-])c1ccc([C@@H](O)[C@@H](CO)N=C(O)C(Cl)Cl)cc1,3.2.1.37,12,O=[N+]([O-])c1ccc(OC2OCC(O)C(O)C2O)cc1,MLJYKRYCCUGBBV-UHFFFAOYSA-N
+4,Chloramphenicol,O=[N+]([O-])c1ccc([C@@H](O)[C@@H](CO)N=C(O)C(Cl)Cl)cc1,3.2.1.31,12,O=[N+]([O-])c1ccc(OC2OCC(O)C(O)C2O)cc1,MLJYKRYCCUGBBV-UHFFFAOYSA-N
+5,Chloramphenicol,O=[N+]([O-])c1ccc([C@@H](O)[C@@H](CO)N=C(O)C(Cl)Cl)cc1,3.2.1.55,12,O=[N+]([O-])c1ccc(OC2OCC(O)C(O)C2O)cc1,MLJYKRYCCUGBBV-UHFFFAOYSA-N

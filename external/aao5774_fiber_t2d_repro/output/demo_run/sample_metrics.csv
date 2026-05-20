@@ -1,0 +1,13 @@
+sample_id,group,hba1c_change,scfa_relative_abundance,scfa_richness,detrimental_relative_abundance
+S01,control,-0.1,0.07,3,0.08
+S02,control,-0.15,0.06,3,0.073
+S03,control,-0.2,0.055999999999999994,3,0.08
+S04,control,-0.05,0.075,3,0.069
+S05,control,-0.12,0.066,3,0.075
+S06,control,-0.18,0.055999999999999994,3,0.08
+S07,high_fiber,-0.6,0.19,3,0.032
+S08,high_fiber,-0.72,0.202,3,0.027999999999999997
+S09,high_fiber,-0.55,0.183,3,0.034999999999999996
+S10,high_fiber,-0.66,0.196,3,0.03
+S11,high_fiber,-0.58,0.187,3,0.033
+S12,high_fiber,-0.7,0.199,3,0.027999999999999997

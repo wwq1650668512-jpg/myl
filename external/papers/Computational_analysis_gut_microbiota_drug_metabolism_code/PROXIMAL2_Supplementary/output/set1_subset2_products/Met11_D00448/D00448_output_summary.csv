@@ -1,0 +1,7 @@
+,DrugName,DrugSmiles,EC,ReactionCenter,ProductSmiles,ProductInChiKey
+0,Sulfasalazine,O=C(O)c1cc(/N=N/c2ccc(S(=O)(=O)Nc3ccccn3)cc2)ccc1O,1.7.1.-,7,Nc1ccc(O)c(C(=O)O)c1,KBOPZPXVLCULAV-UHFFFAOYSA-N
+1,Sulfasalazine,O=C(O)c1cc(/N=N/c2ccc(S(=O)(=O)Nc3ccccn3)cc2)ccc1O,1.7.1.-,8,Nc1ccc(S(=O)(=O)Nc2ccccn2)cc1,GECHUMIMRBOMGK-UHFFFAOYSA-N
+2,Sulfasalazine,O=C(O)c1cc(/N=N/c2ccc(S(=O)(=O)Nc3ccccn3)cc2)ccc1O,2.4.1.191,28,O=C(O)c1cc(/N=N/c2ccc(S(=O)(=O)Nc3ccccn3)cc2)ccc1OC1OC(C(=O)O)C(O)C(O)C1O,FAQPTLMYJUVKHW-CYYJNZCTSA-N
+3,Sulfasalazine,O=C(O)c1cc(/N=N/c2ccc(S(=O)(=O)Nc3ccccn3)cc2)ccc1O,3.2.1.31,28,O=C(O)c1cc(/N=N/c2ccc(S(=O)(=O)Nc3ccccn3)cc2)ccc1OC1OC(C(=O)O)C(O)C(O)C1O,FAQPTLMYJUVKHW-CYYJNZCTSA-N
+4,Sulfasalazine,O=C(O)c1cc(/N=N/c2ccc(S(=O)(=O)Nc3ccccn3)cc2)ccc1O,3.2.1.21,28,O=C(O)c1cc(/N=N/c2ccc(S(=O)(=O)Nc3ccccn3)cc2)ccc1OC1OC(CO)C(O)C(O)C1O,GIIQVHLDTBYGLD-CYYJNZCTSA-N
+5,Sulfasalazine,O=C(O)c1cc(/N=N/c2ccc(S(=O)(=O)Nc3ccccn3)cc2)ccc1O,2.4.1.172,28,O=C(O)c1cc(/N=N/c2ccc(S(=O)(=O)Nc3ccccn3)cc2)ccc1OC1OC(CO)C(O)C(O)C1O,GIIQVHLDTBYGLD-CYYJNZCTSA-N

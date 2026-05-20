@@ -1,0 +1,5 @@
+row_type,check_id,benchmark_status,n_cases,match_count,match_rate,low_confidence_rate,any_warning_rate,severe_warning_rate,definition
+status_profile,PARTIAL_profile,PARTIAL,3,,,0.6666666666666666,1.0,1.0,diagnostic rates per benchmark status
+status_profile,PASS_profile,PASS,6,,,0.5,1.0,0.6666666666666666,diagnostic rates per benchmark status
+alignment_check,fail_should_have_low_or_warning,FAIL,0,0,,,,,confidence_tier == low OR warning_count > 0
+alignment_check,pass_should_not_have_severe_warning,PASS,6,2,0.3333333333333333,,,,severe_warning_count == 0

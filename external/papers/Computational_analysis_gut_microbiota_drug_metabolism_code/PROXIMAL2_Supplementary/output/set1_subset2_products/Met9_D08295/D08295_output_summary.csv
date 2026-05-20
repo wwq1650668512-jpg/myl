@@ -1,0 +1,11 @@
+,DrugName,DrugSmiles,EC,ReactionCenter,ProductSmiles,ProductInChiKey
+0,Olsalazine,O=C(O)c1cc(N=Nc2ccc(O)c(C(=O)O)c2)ccc1O,1.7.1.-,7,Nc1ccc(O)c(C(=O)O)c1,KBOPZPXVLCULAV-UHFFFAOYSA-N
+1,Olsalazine,O=C(O)c1cc(N=Nc2ccc(O)c(C(=O)O)c2)ccc1O,1.7.1.-,8,Nc1ccc(O)c(C(=O)O)c1,KBOPZPXVLCULAV-UHFFFAOYSA-N
+2,Olsalazine,O=C(O)c1cc(N=Nc2ccc(O)c(C(=O)O)c2)ccc1O,2.4.1.191,13,O=C(O)c1cc(/N=N/c2ccc(OC3OC(C(=O)O)C(O)C(O)C3O)c(C(=O)O)c2)ccc1O,KKSPLWWFGMRUGR-QURGRASLSA-N
+3,Olsalazine,O=C(O)c1cc(N=Nc2ccc(O)c(C(=O)O)c2)ccc1O,3.2.1.31,13,O=C(O)c1cc(/N=N/c2ccc(OC3OC(C(=O)O)C(O)C(O)C3O)c(C(=O)O)c2)ccc1O,KKSPLWWFGMRUGR-QURGRASLSA-N
+4,Olsalazine,O=C(O)c1cc(N=Nc2ccc(O)c(C(=O)O)c2)ccc1O,2.4.1.191,22,O=C(O)c1cc(/N=N/c2ccc(OC3OC(C(=O)O)C(O)C(O)C3O)c(C(=O)O)c2)ccc1O,KKSPLWWFGMRUGR-QURGRASLSA-N
+5,Olsalazine,O=C(O)c1cc(N=Nc2ccc(O)c(C(=O)O)c2)ccc1O,3.2.1.31,22,O=C(O)c1cc(/N=N/c2ccc(OC3OC(C(=O)O)C(O)C(O)C3O)c(C(=O)O)c2)ccc1O,KKSPLWWFGMRUGR-QURGRASLSA-N
+6,Olsalazine,O=C(O)c1cc(N=Nc2ccc(O)c(C(=O)O)c2)ccc1O,3.2.1.21,13,O=C(O)c1cc(/N=N/c2ccc(OC3OC(CO)C(O)C(O)C3O)c(C(=O)O)c2)ccc1O,VCRICICWNDSDKG-QURGRASLSA-N
+7,Olsalazine,O=C(O)c1cc(N=Nc2ccc(O)c(C(=O)O)c2)ccc1O,3.2.1.21,22,O=C(O)c1cc(/N=N/c2ccc(OC3OC(CO)C(O)C(O)C3O)c(C(=O)O)c2)ccc1O,VCRICICWNDSDKG-QURGRASLSA-N
+8,Olsalazine,O=C(O)c1cc(N=Nc2ccc(O)c(C(=O)O)c2)ccc1O,2.4.1.172,13,O=C(O)c1cc(/N=N/c2ccc(OC3OC(CO)C(O)C(O)C3O)c(C(=O)O)c2)ccc1O,VCRICICWNDSDKG-QURGRASLSA-N
+9,Olsalazine,O=C(O)c1cc(N=Nc2ccc(O)c(C(=O)O)c2)ccc1O,2.4.1.172,22,O=C(O)c1cc(/N=N/c2ccc(OC3OC(CO)C(O)C(O)C3O)c(C(=O)O)c2)ccc1O,VCRICICWNDSDKG-QURGRASLSA-N

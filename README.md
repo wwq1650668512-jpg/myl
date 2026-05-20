@@ -64,6 +64,7 @@
 
 - [docs/technical_route_detailed.md](/mnt/e/毕业/docs/technical_route_detailed.md)：项目技术路线与实现过程总说明。
 - [docs/project_blueprint.md](/mnt/e/毕业/docs/project_blueprint.md)：三步模型的详细设计蓝图。
+- [docs/step123_structure.md](/mnt/e/毕业/docs/step123_structure.md)：Step 1 / Step 2 / Step 3 总览结构图。
 - [docs/step1_pipeline.md](/mnt/e/毕业/docs/step1_pipeline.md)：Step 1 的下载、标准化和 baseline 训练说明。
 - [docs/step2_pipeline.md](/mnt/e/毕业/docs/step2_pipeline.md)：Step 2 的标签标准化和建模表组装说明。
 - [docs/web_app.md](/mnt/e/毕业/docs/web_app.md)：三步模型可视化网页说明。

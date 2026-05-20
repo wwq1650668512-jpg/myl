@@ -1,0 +1,50 @@
+[
+  {
+    "Index": "96",
+    "PMID": "20014457",
+    "ResearchType": "Gut microbiota associated with phenotype",
+    "HumanOrMouse": "Human",
+    "Condition1": "Irritable Bowel Syndrome;Diarrhea",
+    "Condition1ID": "D043183;D003967",
+    "Condition2": "Health",
+    "Condition2ID": "D006262",
+    "GutMicrobe": "Bacteroides intestinalis",
+    "GutMicrobeID": "gm0872",
+    "GutMicrobeNcbiID": "329854",
+    "Classification": "species",
+    "Alteration": "decrease",
+    "SequencingTechnology": "16s rRNA gene sequencing"
+  },
+  {
+    "Index": "96",
+    "PMID": "20014457",
+    "ResearchType": "Gut microbiota associated with phenotype",
+    "HumanOrMouse": "Human",
+    "Condition1": "Irritable Bowel Syndrome;Diarrhea",
+    "Condition1ID": "D043183;D003967",
+    "Condition2": "Health",
+    "Condition2ID": "D006262",
+    "GutMicrobe": "Clostridium cocleatum",
+    "GutMicrobeID": "gm0199",
+    "GutMicrobeNcbiID": "69824",
+    "Classification": "species",
+    "Alteration": "decrease",
+    "SequencingTechnology": "16s rRNA gene sequencing"
+  },
+  {
+    "Index": "96",
+    "PMID": "20014457",
+    "ResearchType": "Gut microbiota associated with phenotype",
+    "HumanOrMouse": "Human",
+    "Condition1": "Irritable Bowel Syndrome;Diarrhea",
+    "Condition1ID": "D043183;D003967",
+    "Condition2": "Health",
+    "Condition2ID": "D006262",
+    "GutMicrobe": "Collinsella aerofaciens",
+    "GutMicrobeID": "gm0829",
+    "GutMicrobeNcbiID": "74426",
+    "Classification": "species",
+    "Alteration": "decrease",
+    "SequencingTechnology": "16s rRNA gene sequencing"
+  }
+]

@@ -1,0 +1,13 @@
+sample_id,group,hba1c_change
+S01,control,-0.10
+S02,control,-0.15
+S03,control,-0.20
+S04,control,-0.05
+S05,control,-0.12
+S06,control,-0.18
+S07,high_fiber,-0.60
+S08,high_fiber,-0.72
+S09,high_fiber,-0.55
+S10,high_fiber,-0.66
+S11,high_fiber,-0.58
+S12,high_fiber,-0.70

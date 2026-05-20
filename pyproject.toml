@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gut-drug-microbiome"
+version = "0.1.0"
+description = "Reproducible pipelines and local tooling for gut drug-microbiome interaction modeling."
+readme = "README.md"
+requires-python = ">=3.11,<3.15"
+dependencies = [
+  "joblib",
+  "numpy",
+  "openpyxl",
+  "pandas",
+  "PyYAML",
+  "rdkit",
+  "scikit-learn",
+  "scipy",
+]
+
+[project.optional-dependencies]
+chemprop = ["chemprop"]
+dev = [
+  "pytest>=8",
+]
+
+[project.scripts]
+gut-drug-microbiome = "gut_drug_microbiome.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]

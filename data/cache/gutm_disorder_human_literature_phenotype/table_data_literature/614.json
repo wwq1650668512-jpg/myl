@@ -1,0 +1,34 @@
+[
+  {
+    "Index": "614",
+    "PMID": "28902124",
+    "ResearchType": "Gut microbiota associated with phenotype",
+    "HumanOrMouse": "Human",
+    "Condition1": "Familial GUCY2C diarrhea syndrome",
+    "Condition1ID": "*",
+    "Condition2": "Health",
+    "Condition2ID": "D006262",
+    "GutMicrobe": "Euryarchaeota",
+    "GutMicrobeID": "gm0321",
+    "GutMicrobeNcbiID": "28890",
+    "Classification": "phylum",
+    "Alteration": "increase",
+    "SequencingTechnology": "16s rRNA gene sequencing"
+  },
+  {
+    "Index": "614",
+    "PMID": "28902124",
+    "ResearchType": "Gut microbiota associated with phenotype",
+    "HumanOrMouse": "Human",
+    "Condition1": "Familial GUCY2C diarrhea syndrome",
+    "Condition1ID": "*",
+    "Condition2": "Health",
+    "Condition2ID": "D006262",
+    "GutMicrobe": "Methanobrevibacter",
+    "GutMicrobeID": "gm0439",
+    "GutMicrobeNcbiID": "2172",
+    "Classification": "genus",
+    "Alteration": "decrease",
+    "SequencingTechnology": "16s rRNA gene sequencing"
+  }
+]

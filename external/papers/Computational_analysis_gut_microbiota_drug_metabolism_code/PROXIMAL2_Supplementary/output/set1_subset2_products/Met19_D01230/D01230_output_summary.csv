@@ -1,0 +1,4 @@
+,DrugName,DrugSmiles,EC,ReactionCenter,ProductSmiles,ProductInChiKey
+0,Flunitrazepam,CN1C(=O)CN=C(c2ccccc2F)c2cc([N+](=O)[O-])ccc21,4.1.1.-,9,CN1C(=O)CN=C(c2c(F)cccc2C(=O)O)c2cc([N+](=O)[O-])ccc21,PYUYJQULAITXHV-UHFFFAOYSA-N
+1,Flunitrazepam,CN1C(=O)CN=C(c2ccccc2F)c2cc([N+](=O)[O-])ccc21,1.7.1.-,17,CN1C(=O)CN=C(c2ccccc2F)c2cc(N)ccc21,LTCDLGUFORGHGY-UHFFFAOYSA-N
+2,Flunitrazepam,CN1C(=O)CN=C(c2ccccc2F)c2cc([N+](=O)[O-])ccc21,1.7.1.-,17,CN1C(=O)CN=C(c2ccccc2F)c2cc(NO)ccc21,DJXHGKUTLGXQTG-UHFFFAOYSA-N

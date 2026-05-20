@@ -1,0 +1,17 @@
+{
+  "generated_at": "2026-04-17T14:34:09.373734",
+  "input_smiles": "CC1=C(C#CC2=CN=C3C=CC(N4CCC(O)CC4)=NN23)C=CC=C1C(=O)NC1=CC(C(F)(F)F)=CC(Cl)=C1",
+  "session_id": "4f396f45b0a2",
+  "n_raw_rows": 83,
+  "n_dedup_rows": 69,
+  "confidence_score": 0.35,
+  "confidence_tier": "low",
+  "warning_flags": [
+    "core-butyrate-suppression",
+    "ecology-risk",
+    "over-suppression"
+  ],
+  "confidence_explanation": "当前预测置信度低（0.35），主要风险来自：核心产丁酸菌出现强抑制（5/5）。另检测到 2 项风险信号。",
+  "enzyme_prior_true_rows": 63,
+  "file_csv": "/mnt/e/毕业/docs/test_results/custom_smiles_test_20260417_143343_dedup_all_microbes.csv"
+}

@@ -11,6 +11,9 @@ from urllib.parse import urlparse
 
 from .service import DEFAULT_DEMO_RANKING_PATH
 from .service import DEFAULT_INTEGRATED_PREDICTIONS_PATH
+from .service import DEFAULT_DISEASE_MICROBE_REFERENCE_PATH
+from .service import DEFAULT_DISEASE_MICROBE_SUPPLEMENT_PATHS
+from .service import DEFAULT_DISEASE_DRUG_REFERENCE_PATH
 from .service import GutPredictionService
 
 
@@ -69,6 +72,21 @@ class GutPredictionRequestHandler(SimpleHTTPRequestHandler):
             return default
         return text
 
+    def _optional_bool(self, payload: dict[str, object], key: str, default: bool = False) -> bool:
+        if key not in payload:
+            return default
+        value = payload.get(key)
+        if isinstance(value, bool):
+            return value
+        if value is None:
+            return default
+        text = str(value).strip().lower()
+        if text in {"1", "true", "yes", "y", "on"}:
+            return True
+        if text in {"0", "false", "no", "n", "off"}:
+            return False
+        return default
+
     def do_GET(self) -> None:  # noqa: N802
         parsed = urlparse(self.path)
         if parsed.path.startswith("/api/"):
@@ -104,6 +122,8 @@ class GutPredictionRequestHandler(SimpleHTTPRequestHandler):
 
         if parsed.path in {"", "/"}:
             self.path = "/index.html"
+        elif parsed.path in {"/simple", "/simple/"}:
+            self.path = "/simple.html"
         else:
             self.path = parsed.path
         super().do_GET()
@@ -153,6 +173,15 @@ class GutPredictionRequestHandler(SimpleHTTPRequestHandler):
                         metabolism_scale=float(payload.get("metabolism_scale", 0.85)),
                         effect_scale=float(payload.get("effect_scale", 0.55)),
                         ecology_strength=float(payload.get("ecology_strength", 0.20)),
+                        experimental_multi_product_enabled=self._optional_bool(
+                            payload,
+                            "experimental_multi_product_enabled",
+                            default=False,
+                        ),
+                        experimental_branching_scale=float(payload.get("experimental_branching_scale", 0.35)),
+                        experimental_secondary_metabolism_rate=float(
+                            payload.get("experimental_secondary_metabolism_rate", 0.10)
+                        ),
                     ),
                 )
                 return
@@ -176,6 +205,15 @@ class GutPredictionRequestHandler(SimpleHTTPRequestHandler):
                         metabolism_scale=float(payload.get("metabolism_scale", 0.85)),
                         effect_scale=float(payload.get("effect_scale", 0.55)),
                         ecology_strength=float(payload.get("ecology_strength", 0.20)),
+                        experimental_multi_product_enabled=self._optional_bool(
+                            payload,
+                            "experimental_multi_product_enabled",
+                            default=False,
+                        ),
+                        experimental_branching_scale=float(payload.get("experimental_branching_scale", 0.35)),
+                        experimental_secondary_metabolism_rate=float(
+                            payload.get("experimental_secondary_metabolism_rate", 0.10)
+                        ),
                     ),
                 )
                 return
@@ -196,6 +234,15 @@ class GutPredictionRequestHandler(SimpleHTTPRequestHandler):
                         metabolism_scale=float(payload.get("metabolism_scale", 0.85)),
                         effect_scale=float(payload.get("effect_scale", 0.55)),
                         ecology_strength=float(payload.get("ecology_strength", 0.20)),
+                        experimental_multi_product_enabled=self._optional_bool(
+                            payload,
+                            "experimental_multi_product_enabled",
+                            default=False,
+                        ),
+                        experimental_branching_scale=float(payload.get("experimental_branching_scale", 0.35)),
+                        experimental_secondary_metabolism_rate=float(
+                            payload.get("experimental_secondary_metabolism_rate", 0.10)
+                        ),
                     ),
                 )
                 return
@@ -217,6 +264,15 @@ class GutPredictionRequestHandler(SimpleHTTPRequestHandler):
                         metabolism_scale=float(payload.get("metabolism_scale", 0.85)),
                         effect_scale=float(payload.get("effect_scale", 0.55)),
                         ecology_strength=float(payload.get("ecology_strength", 0.20)),
+                        experimental_multi_product_enabled=self._optional_bool(
+                            payload,
+                            "experimental_multi_product_enabled",
+                            default=False,
+                        ),
+                        experimental_branching_scale=float(payload.get("experimental_branching_scale", 0.35)),
+                        experimental_secondary_metabolism_rate=float(
+                            payload.get("experimental_secondary_metabolism_rate", 0.10)
+                        ),
                     ),
                 )
                 return
@@ -236,11 +292,17 @@ def serve_web_app(
     port: int = 8080,
     integrated_predictions_path: str | Path = DEFAULT_INTEGRATED_PREDICTIONS_PATH,
     demo_ranking_path: str | Path | None = DEFAULT_DEMO_RANKING_PATH,
+    disease_microbe_reference_path: str | Path | None = DEFAULT_DISEASE_MICROBE_REFERENCE_PATH,
+    disease_microbe_supplement_paths: tuple[str | Path, ...] = DEFAULT_DISEASE_MICROBE_SUPPLEMENT_PATHS,
+    disease_drug_reference_path: str | Path | None = DEFAULT_DISEASE_DRUG_REFERENCE_PATH,
     static_dir: str | Path = DEFAULT_STATIC_DIR,
 ) -> None:
     service = GutPredictionService(
         integrated_predictions_path=integrated_predictions_path,
         demo_ranking_path=demo_ranking_path,
+        disease_microbe_reference_path=disease_microbe_reference_path,
+        disease_microbe_supplement_paths=disease_microbe_supplement_paths,
+        disease_drug_reference_path=disease_drug_reference_path,
     )
     server = GutPredictionHTTPServer(
         server_address=(host, port),

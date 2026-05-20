@@ -1,0 +1,18 @@
+[
+  {
+    "Index": "98",
+    "PMID": "20014457",
+    "ResearchType": "Gut microbiota associated with phenotype",
+    "HumanOrMouse": "Human",
+    "Condition1": "Irritable bowel syndrome mixed type",
+    "Condition1ID": "*",
+    "Condition2": "Health",
+    "Condition2ID": "D006262",
+    "GutMicrobe": "Ruminococcus torques",
+    "GutMicrobeID": "gm1404",
+    "GutMicrobeNcbiID": "33039",
+    "Classification": "species",
+    "Alteration": "decrease",
+    "SequencingTechnology": "16s rRNA gene sequencing"
+  }
+]

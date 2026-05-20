@@ -8,6 +8,7 @@ const state = {
   customSessionId: null,
   customProfile: null,
   customSelectedPair: null,
+  activeProfile: null,
   toastTimer: null,
   latestTrajectory: [],
 };
@@ -50,6 +51,22 @@ function formatPercent(value, digits = 1) {
   return `${(Number(value) * 100).toFixed(digits)}%`;
 }
 
+function formatExperimentalValue(value, digits = 2, enabled = false) {
+  if (!enabled) {
+    return "未启用";
+  }
+  return formatNumber(value, digits);
+}
+
+function slugifyText(value, fallback = "export") {
+  const normalized = String(value ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9\u4e00-\u9fff]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+  return normalized || fallback;
+}
+
 function labelClass(label) {
   const key = String(label || "").toLowerCase().replace(/_/g, "-");
   return `label-${key || "unknown"}`;
@@ -66,6 +83,14 @@ function showToast(message, isError = false) {
   }
   const duration = isError ? 9000 : 2800;
   state.toastTimer = window.setTimeout(() => toast.classList.remove("visible"), duration);
+}
+
+function showSmilesError(message) {
+  const text = String(message || "SMILES 输入有误。");
+  showToast(text, true);
+  if (typeof window !== "undefined" && typeof window.alert === "function") {
+    window.alert(text);
+  }
 }
 
 async function fetchJson(url, options = {}) {
@@ -85,6 +110,10 @@ function createStatCard(label, value, caption = "") {
       <span class="caption">${escapeHtml(caption)}</span>
     </div>
   `;
+}
+
+function createStatCardGrid(rows) {
+  return rows.map((row) => createStatCard(row.label, row.value, row.caption || "")).join("");
 }
 
 function createMetaChip(label, value) {
@@ -252,6 +281,20 @@ function aggregateMicrobeRows(rows, mode = "step1") {
         predicted_candidate_product_count: (groupRows || [])
           .map((row) => toFiniteNumber(row?.predicted_candidate_product_count) || 0)
           .reduce((sum, value) => sum + value, 0),
+        biotransform_sidecar_enabled: anyTrue(groupRows, "biotransform_sidecar_enabled"),
+        biotransform_sidecar_mode: majorityLabel(groupRows, "biotransform_sidecar_mode", first.biotransform_sidecar_mode),
+        biotransform_sidecar_support_score: meanField(groupRows, "biotransform_sidecar_support_score"),
+        biotransform_sidecar_similarity: meanField(groupRows, "biotransform_sidecar_similarity"),
+        biotransform_sidecar_confidence: majorityLabel(
+          groupRows,
+          "biotransform_sidecar_confidence",
+          first.biotransform_sidecar_confidence
+        ),
+        biotransform_sidecar_weighted_product_count: meanField(
+          groupRows,
+          "biotransform_sidecar_weighted_product_count"
+        ),
+        biotransform_sidecar_reference_drugs: uniqueJoinedValues(groupRows, "biotransform_sidecar_reference_drugs", 2),
       };
     }
 
@@ -386,28 +429,6 @@ function renderBootstrapSummary(summary) {
   ].join("");
 }
 
-function renderDemoRanking(rows) {
-  const container = document.getElementById("demoRanking");
-  if (!rows || !rows.length) {
-    container.innerHTML = `<div class="empty-state">当前没有可展示的 Step 3 demo ranking。</div>`;
-    return;
-  }
-  container.innerHTML = rows
-    .map(
-      (row, index) => `
-        <div class="ranking-row">
-          <div class="ranking-rank">${index + 1}</div>
-          <div class="ranking-meta">
-            <strong>${escapeHtml(row.chemical_name || row.prestwick_id)}</strong>
-            <span>${escapeHtml(row.prestwick_id || "")} · ${escapeHtml(row.scenario_name || "scenario")}</span>
-          </div>
-          <div class="ranking-score">${formatNumber(row.development_score, 2)}</div>
-        </div>
-      `
-    )
-    .join("");
-}
-
 function populateDrugSelect() {
   const select = document.getElementById("drugSelect");
   const filterText = document.getElementById("drugFilterInput").value.trim().toLowerCase();
@@ -435,6 +456,15 @@ function populateDrugSelect() {
     ),
   ].join("");
   select.value = state.selectedDrug || "";
+}
+
+function findLibraryDrug(drugKeys = []) {
+  const normalizedKeys = drugKeys.map((item) => String(item || "").trim().toLowerCase()).filter(Boolean);
+  return (state.bootstrap?.drugs || []).find((drug) => {
+    const prestwickId = String(drug?.prestwick_id || "").trim().toLowerCase();
+    const chemicalName = String(drug?.chemical_name || "").trim().toLowerCase();
+    return normalizedKeys.some((key) => key === prestwickId || key === chemicalName);
+  });
 }
 
 function populateScenarioSelect() {
@@ -528,6 +558,8 @@ function renderDiseaseExplainCard(profile) {
   const selectedDisease = currentDiseaseName();
   const candidates = profile?.candidate_diseases || [];
   const marketed = profile?.marketed_disease_context || [];
+  const similarity = profile?.similarity_disease_context || [];
+  const similarDrugs = profile?.similar_library_drugs || [];
 
   if (!profile) {
     renderDetailList("diseaseExplainCard", [
@@ -544,6 +576,9 @@ function renderDiseaseExplainCard(profile) {
   const marketedLead = selectedDisease
     ? marketed.find((item) => String(item.disease_name || "").trim() === selectedDisease) || marketed[0] || null
     : marketed[0] || null;
+  const similarityLead = selectedDisease
+    ? similarity.find((item) => String(item.disease_name || "").trim() === selectedDisease) || similarity[0] || null
+    : similarity[0] || null;
   const evidence = selectedMatch?.evidence_examples?.[0] || null;
 
   renderDetailList("diseaseExplainCard", [
@@ -575,16 +610,40 @@ function renderDiseaseExplainCard(profile) {
         : "暂无直接药物命中",
     },
     {
+      label: "结构相似疾病参考",
+      value: similarityLead ? escapeHtml(similarityLead.disease_name || "N/A") : "暂无结构相似疾病参考",
+    },
+    {
+      label: "相似度支持分",
+      value: similarityLead ? formatNumber(similarityLead.support_score, 3) : "N/A",
+    },
+    {
+      label: "相似药参考",
+      value: similarityLead?.matched_market_drugs?.length
+        ? escapeHtml(similarityLead.matched_market_drugs.join(" / "))
+        : similarDrugs.length
+          ? escapeHtml(
+              similarDrugs
+                .slice(0, 3)
+                .map((item) => `${item.chemical_name} (${formatNumber(item.tanimoto_similarity, 2)})`)
+                .join(" / ")
+            )
+          : "暂无高相似度库内药物",
+    },
+    {
       label: "说明",
       value: selectedDisease
-        ? "若未提供真实 community_table，Step 3 会优先用该疾病背景生成起始群落。"
-        : "这里展示的是根据菌群方向性推断出的潜在疾病关联，不等同于临床适应证。",
+        ? "若未提供真实 community_table，Step 3 会优先用该疾病背景生成起始群落。结构相似疾病参考是旁路证据，不覆盖菌群候选疾病。"
+        : "这里同时展示菌群方向性推断和结构相似药参考；后者更适合给新药提供适应证线索，不等同于临床适应证。",
     },
   ]);
 }
 
 function renderBarList(containerId, rows, config) {
   const container = document.getElementById(containerId);
+  if (!container) {
+    return;
+  }
   if (!rows || !rows.length) {
     container.innerHTML = `<div class="empty-state">暂无可展示数据。</div>`;
     return;
@@ -653,24 +712,143 @@ function renderTableBody(bodyId, rows, mapper, emptyColspan = 4) {
   tbody.innerHTML = rows.map(mapper).join("");
 }
 
+function csvEscape(value) {
+  if (value === null || value === undefined) {
+    return "";
+  }
+  const text = String(value);
+  if (/[",\n\r]/.test(text)) {
+    return `"${text.replaceAll('"', '""')}"`;
+  }
+  return text;
+}
+
+function downloadCsv(filename, rows) {
+  if (!rows || !rows.length) {
+    showToast("当前没有可导出的数据。", true);
+    return;
+  }
+  const headers = Object.keys(rows[0] || {});
+  const lines = [
+    headers.map(csvEscape).join(","),
+    ...rows.map((row) => headers.map((header) => csvEscape(row?.[header] ?? "")).join(",")),
+  ];
+  const blob = new Blob([`\uFEFF${lines.join("\n")}`], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+function currentProfileForExport() {
+  return state.activeProfile || (isCustomMode() ? state.customProfile : null);
+}
+
+function currentDrugExportLabel() {
+  const profile = currentProfileForExport();
+  const drug = profile?.drug || {};
+  return (
+    String(drug.chemical_name || "").trim() ||
+    String(drug.prestwick_id || "").trim() ||
+    (isCustomMode() ? "custom_drug" : "library_drug")
+  );
+}
+
+function buildStep1ExportRows(profile) {
+  const rawRows = profile?.panel_effect_microbes || profile?.top_effect_microbes || [];
+  return aggregateMicrobeRows(rawRows, "step1").map((row) => ({
+    microbe_label: row.microbe_label || "",
+    species_label: row.species_label || "",
+    genus: row.genus || "",
+    phylum: row.phylum || "",
+    predicted_effect_label: row.predicted_effect_label || "",
+    predicted_inhibit_probability: toFiniteNumber(row.predicted_inhibit_probability),
+    predicted_promote_probability_refined: toFiniteNumber(row.predicted_promote_probability_refined),
+    predicted_effect_score: toFiniteNumber(row.predicted_effect_score),
+    predicted_promote_support_type: row.predicted_promote_support_type || "",
+    predicted_promote_support_score: toFiniteNumber(row.predicted_promote_support_score),
+    predicted_promote_evidence_type: row.predicted_promote_evidence_type || "",
+    predicted_cross_feeding_support_microbe: row.predicted_cross_feeding_support_microbe || "",
+    predicted_cross_feeding_match_mode: row.predicted_cross_feeding_match_mode || "",
+    predicted_cross_feeding_matched_term: row.predicted_cross_feeding_matched_term || "",
+    amr_expected_phenotype: row.amr_expected_phenotype || "",
+    strain_count: Number(row.strain_count || 0),
+    strain_nt_codes: (row.strain_nt_codes || []).join(";"),
+  }));
+}
+
+function buildStep2ExportRows(profile) {
+  const rawRows = profile?.panel_metabolism_microbes || profile?.top_metabolism_microbes || [];
+  return aggregateMicrobeRows(rawRows, "step2").map((row) => ({
+    microbe_label: row.microbe_label || "",
+    species_label: row.species_label || "",
+    genus: row.genus || "",
+    phylum: row.phylum || "",
+    predicted_metabolism_label: row.predicted_metabolism_label || "",
+    predicted_metabolized_probability: toFiniteNumber(row.predicted_metabolized_probability),
+    predicted_parent_depletion_fraction: toFiniteNumber(row.predicted_parent_depletion_fraction),
+    predicted_reaction_class: row.predicted_reaction_class || "",
+    predicted_reaction_confidence: toFiniteNumber(row.predicted_reaction_confidence),
+    predicted_enzyme_support_score: toFiniteNumber(row.predicted_enzyme_support_score),
+    predicted_enzyme_names: row.predicted_enzyme_names || "",
+    predicted_enzyme_ids: row.predicted_enzyme_ids || "",
+    predicted_enzyme_reaction_classes: row.predicted_enzyme_reaction_classes || "",
+    predicted_enzyme_bond_targets: row.predicted_enzyme_bond_targets || "",
+    predicted_evidence_gene_ids: row.predicted_evidence_gene_ids || "",
+    predicted_evidence_gene_count: Number(row.predicted_evidence_gene_count || 0),
+    predicted_candidate_product_ids: row.predicted_candidate_product_ids || "",
+    predicted_candidate_product_count: Number(row.predicted_candidate_product_count || 0),
+    biotransform_sidecar_mode: row.biotransform_sidecar_mode || "",
+    biotransform_sidecar_support_score: toFiniteNumber(row.biotransform_sidecar_support_score),
+    biotransform_sidecar_similarity: toFiniteNumber(row.biotransform_sidecar_similarity),
+    biotransform_sidecar_confidence: row.biotransform_sidecar_confidence || "",
+    biotransform_sidecar_weighted_product_count: toFiniteNumber(row.biotransform_sidecar_weighted_product_count),
+    biotransform_sidecar_reference_drugs: row.biotransform_sidecar_reference_drugs || "",
+    strain_count: Number(row.strain_count || 0),
+    strain_nt_codes: (row.strain_nt_codes || []).join(";"),
+  }));
+}
+
+function exportStep1Csv() {
+  const profile = currentProfileForExport();
+  if (!profile) {
+    showToast("请先选择库内药物或输入新药 SMILES。", true);
+    return;
+  }
+  const filename = `step1_${slugifyText(currentDrugExportLabel(), "drug")}.csv`;
+  downloadCsv(filename, buildStep1ExportRows(profile));
+  showToast("Step 1 CSV 已导出");
+}
+
+function exportStep2Csv() {
+  const profile = currentProfileForExport();
+  if (!profile) {
+    showToast("请先选择库内药物或输入新药 SMILES。", true);
+    return;
+  }
+  const filename = `step2_${slugifyText(currentDrugExportLabel(), "drug")}.csv`;
+  downloadCsv(filename, buildStep2ExportRows(profile));
+  showToast("Step 2 CSV 已导出");
+}
+
 function resetStep1Display() {
-  document.getElementById("step1PairStats").innerHTML = [
-    createStatCard("Panel Scope", "N/A", "选择库内药物或输入新药后显示"),
-    createStatCard("Inhibit Pairs", "N/A", "等待预测结果"),
-    createStatCard("Mean Inhibit Prob", "N/A", "等待预测结果"),
-    createStatCard("Mean Effect Score", "N/A", "等待预测结果"),
-  ].join("");
-  document.getElementById("step1EffectBars").innerHTML = `<div class="empty-state">请选择库内药物或输入新药 SMILES。</div>`;
-  renderDetailList("step1PairDetails", [
-    { label: "Status", value: "等待加载预测结果" },
-    { label: "Panel Scope", value: "N/A" },
-    { label: "Inhibit", value: "N/A" },
-    { label: "Promote", value: "N/A" },
-    { label: "Mean Refined Promote Prob", value: "N/A" },
-    { label: "Metabolism-supported Promote", value: "N/A" },
-    { label: "No Effect", value: "N/A" },
-    { label: "Strongest Effect", value: "N/A" },
+  document.getElementById("step1PairStats").innerHTML = createStatCardGrid([
+    { label: "Panel Scope", value: "N/A", caption: "选择库内药物或输入新药后显示" },
+    { label: "Inhibit Pairs", value: "N/A", caption: "等待预测结果" },
+    { label: "Promote", value: "N/A", caption: "预测为促进的微生物 pair 数" },
+    { label: "Metabolism-supported Promote", value: "N/A", caption: "由自身代谢证据支持的促进 pair 数" },
+    { label: "Cross-feeding Supported", value: "N/A", caption: "由交叉喂养参考支持的促进 pair 数" },
+    { label: "No Effect", value: "N/A", caption: "预测无明显作用的微生物 pair 数" },
+    { label: "AMR 修正", value: "N/A", caption: "被耐药规则修正标签的 pair 数" },
   ]);
+  const step1EffectBars = document.getElementById("step1EffectBars");
+  if (step1EffectBars) {
+    step1EffectBars.innerHTML = `<div class="empty-state">请选择库内药物或输入新药 SMILES。</div>`;
+  }
   renderTableBody("step1TableBody", [], () => "", 5);
   renderMechanismExplainCard(null, null);
   renderDiseaseExplainCard(null);
@@ -807,63 +985,31 @@ function renderStep1(profile) {
   const counts = aggregated.step1_counts || {};
   const rawPanelRows = profile.panel_effect_microbes || profile.top_effect_microbes || [];
   const panelRows = aggregateMicrobeRows(rawPanelRows, "step1");
-  const strongestRow = panelRows[0] || null;
   const panelSize = currentPanelSize();
-  const displaySize = panelRows.length;
   const pairStats = document.getElementById("step1PairStats");
-  pairStats.innerHTML = [
-    createStatCard("Panel Scope", `${panelSize}`, "当前药物已在整面板微生物上完成预测"),
-    createStatCard(
-      "Inhibit Pairs",
-      counts.inhibit ?? 0,
-      "预测为抑制的微生物 pair 数"
-    ),
-    createStatCard(
-      "Mean Inhibit Prob",
-      formatNumber(aggregated.mean_predicted_inhibit_probability, 3),
-      "面板平均抑制概率"
-    ),
-    createStatCard(
-      "Mean Effect Score",
-      formatNumber(aggregated.mean_predicted_effect_score, 3),
-      "面板平均连续效应"
-    ),
-  ].join("");
+  pairStats.innerHTML = createStatCardGrid([
+    { label: "Panel Scope", value: `${panelSize}`, caption: "当前药物已在整面板微生物上完成预测" },
+    { label: "Inhibit Pairs", value: counts.inhibit ?? 0, caption: "预测为抑制的微生物 pair 数" },
+    { label: "Promote", value: escapeHtml(String(counts.promote ?? 0)), caption: "预测为促进的微生物 pair 数" },
+    {
+      label: "Metabolism-supported Promote",
+      value: escapeHtml(String(aggregated.metabolism_supported_promote_pairs ?? 0)),
+      caption: "由自身代谢证据支持的促进 pair 数",
+    },
+    {
+      label: "Cross-feeding Supported",
+      value: escapeHtml(String(aggregated.cross_feeding_supported_promote_pairs ?? 0)),
+      caption: "由交叉喂养参考支持的促进 pair 数",
+    },
+    { label: "No Effect", value: escapeHtml(String(counts.no_effect ?? 0)), caption: "预测无明显作用的微生物 pair 数" },
+    { label: "AMR 修正", value: escapeHtml(String(aggregated.amr_corrected_pairs ?? 0)), caption: "被耐药规则修正标签的 pair 数" },
+  ]);
 
   renderBarList("step1EffectBars", panelRows.slice(0, 8), {
     mode: "diverging",
     labelKey: "microbe_label",
     valueKey: "predicted_effect_score",
   });
-
-  renderDetailList("step1PairDetails", [
-    { label: "Panel Scope", value: `${escapeHtml(panelSize)} microbes` },
-    { label: "Display Scope", value: `${escapeHtml(displaySize)} unique names` },
-    { label: "Inhibit", value: escapeHtml(String(counts.inhibit ?? 0)) },
-    { label: "Promote", value: escapeHtml(String(counts.promote ?? 0)) },
-    {
-      label: "Mean Refined Promote Prob",
-      value: formatNumber(aggregated.mean_predicted_promote_probability_refined, 3),
-    },
-    {
-      label: "Metabolism-supported Promote",
-      value: escapeHtml(String(aggregated.metabolism_supported_promote_pairs ?? 0)),
-    },
-    {
-      label: "Cross-feeding Supported",
-      value: escapeHtml(String(aggregated.cross_feeding_supported_promote_pairs ?? 0)),
-    },
-    { label: "No Effect", value: escapeHtml(String(counts.no_effect ?? 0)) },
-    { label: "AMR 修正", value: escapeHtml(String(aggregated.amr_corrected_pairs ?? 0)) },
-    {
-      label: "Strongest Effect",
-      value: strongestRow ? escapeHtml(strongestRow.microbe_label || strongestRow.nt_code || "N/A") : "N/A",
-    },
-    {
-      label: "Top Effect Score",
-      value: strongestRow ? formatNumber(strongestRow.predicted_effect_score, 3) : "N/A",
-    },
-  ]);
 
   renderTableBody(
     "step1TableBody",
@@ -932,50 +1078,63 @@ function renderStep1(profile) {
 }
 
 function resetStep2Display() {
-  document.getElementById("step2PairStats").innerHTML = [
-    createStatCard("Panel Scope", "N/A", "选择库内药物或输入新药后显示"),
-    createStatCard("Metabolized Pairs", "N/A", "等待预测结果"),
-    createStatCard("Mean Metabolized Prob", "N/A", "等待预测结果"),
-    createStatCard("Applicability Rate", "N/A", "等待预测结果"),
-  ].join("");
-  document.getElementById("step2MetabolismBars").innerHTML = `<div class="empty-state">请选择库内药物或输入新药 SMILES。</div>`;
-  renderDetailList("step2PairDetails", [
-    { label: "Status", value: "等待加载预测结果" },
-    { label: "Panel Scope", value: "N/A" },
-    { label: "Metabolized", value: "N/A" },
-    { label: "Not Metabolized", value: "N/A" },
-    { label: "Applicability Rate", value: "N/A" },
-    { label: "Top Metabolizer", value: "N/A" },
+  document.getElementById("step2PairStats").innerHTML = createStatCardGrid([
+    { label: "Panel Scope", value: "N/A", caption: "选择库内药物或输入新药后显示" },
+    { label: "Metabolized Pairs", value: "N/A", caption: "等待预测结果" },
+    { label: "Applicability Rate", value: "N/A", caption: "等待预测结果" },
+    { label: "BioTransformer Sidecar", value: "N/A", caption: "并行代谢证据支路命中情况" },
+    { label: "Not Metabolized", value: "N/A", caption: "预测不会代谢该药物的微生物 pair 数" },
+    { label: "机制投影覆盖", value: "N/A", caption: "已获得反应类机制投影的 pair 比例" },
+    { label: "酶先验覆盖", value: "N/A", caption: "命中酶先验支持的 pair 比例" },
+    { label: "反应类已投影", value: "N/A", caption: "已投影出反应类标签的 pair 数" },
+    { label: "基因证据已投影", value: "N/A", caption: "已投影出基因证据的 pair 数" },
+    { label: "酶先验支持对数", value: "N/A", caption: "获得酶先验支持的 pair 数" },
   ]);
+  const step2MetabolismBars = document.getElementById("step2MetabolismBars");
+  if (step2MetabolismBars) {
+    step2MetabolismBars.innerHTML = `<div class="empty-state">请选择库内药物或输入新药 SMILES。</div>`;
+  }
   renderTableBody("step2TableBody", [], () => "", 4);
 }
 
 function renderStep2(profile) {
   const aggregated = profile?.aggregated || {};
+  const sidecar = profile?.biotransform_sidecar || {};
   const counts = aggregated.step2_counts || {};
   const rawPanelRows = profile.panel_metabolism_microbes || profile.top_metabolism_microbes || [];
   const panelRows = aggregateMicrobeRows(rawPanelRows, "step2");
-  const strongestRow = panelRows[0] || null;
   const panelSize = currentPanelSize();
-  const displaySize = panelRows.length;
-  document.getElementById("step2PairStats").innerHTML = [
-    createStatCard("Panel Scope", `${panelSize}`, "当前药物已在整面板微生物上完成预测"),
-    createStatCard(
-      "Metabolized Pairs",
-      counts.metabolized ?? 0,
-      "预测会代谢该药物的微生物 pair 数"
-    ),
-    createStatCard(
-      "Mean Metabolized Prob",
-      formatNumber(aggregated.mean_predicted_metabolized_probability, 3),
-      "面板平均代谢概率"
-    ),
-    createStatCard(
-      "Applicability Rate",
-      formatPercent(aggregated.applicability_rate, 1),
-      "落在当前 applicability 范围内的比例"
-    ),
-  ].join("");
+  const sidecarEnabled = Boolean(
+    sidecar.enabled !== undefined ? sidecar.enabled : aggregated.biotransform_sidecar_enabled
+  );
+  const sidecarSupport = sidecar.support_score ?? aggregated.biotransform_sidecar_support_score;
+  const sidecarSimilarity = sidecar.similarity ?? aggregated.biotransform_sidecar_similarity;
+  document.getElementById("step2PairStats").innerHTML = createStatCardGrid([
+    { label: "Panel Scope", value: `${panelSize}`, caption: "当前药物已在整面板微生物上完成预测" },
+    {
+      label: "Metabolized Pairs",
+      value: counts.metabolized ?? 0,
+      caption: "预测会代谢该药物的微生物 pair 数",
+    },
+    {
+      label: "Applicability Rate",
+      value: formatPercent(aggregated.applicability_rate, 1),
+      caption: "落在当前 applicability 范围内的比例",
+    },
+    {
+      label: "BioTransformer Sidecar",
+      value: sidecarEnabled ? "已命中" : "无支持",
+      caption: sidecarEnabled
+        ? `support ${formatNumber(sidecarSupport, 3)} · 相似度 ${formatNumber(sidecarSimilarity, 3)}`
+        : "当前只作为并行证据源，不替换主模型",
+    },
+    { label: "Not Metabolized", value: escapeHtml(String(counts.not_metabolized ?? 0)), caption: "预测不会代谢该药物的微生物 pair 数" },
+    { label: "机制投影覆盖", value: formatPercent(aggregated.mechanism_projection_rate, 1), caption: "已获得反应类机制投影的 pair 比例" },
+    { label: "酶先验覆盖", value: formatPercent(aggregated.enzyme_prior_support_rate, 1), caption: "命中酶先验支持的 pair 比例" },
+    { label: "反应类已投影", value: escapeHtml(String(aggregated.reaction_projection_pairs ?? 0)), caption: "已投影出反应类标签的 pair 数" },
+    { label: "基因证据已投影", value: escapeHtml(String(aggregated.gene_projection_pairs ?? 0)), caption: "已投影出基因证据的 pair 数" },
+    { label: "酶先验支持对数", value: escapeHtml(String(aggregated.enzyme_prior_supported_pairs ?? 0)), caption: "获得酶先验支持的 pair 数" },
+  ]);
 
   renderBarList("step2MetabolismBars", panelRows.slice(0, 8), {
     mode: "standard",
@@ -983,32 +1142,6 @@ function renderStep2(profile) {
     valueKey: "predicted_metabolized_probability",
     color: "linear-gradient(135deg, #d97706 0%, #f59e0b 100%)",
   });
-
-  renderDetailList("step2PairDetails", [
-    { label: "Panel Scope", value: `${escapeHtml(panelSize)} microbes` },
-    { label: "Display Scope", value: `${escapeHtml(displaySize)} unique names` },
-    { label: "Metabolized", value: escapeHtml(String(counts.metabolized ?? 0)) },
-    { label: "Not Metabolized", value: escapeHtml(String(counts.not_metabolized ?? 0)) },
-    { label: "Applicability Rate", value: formatPercent(aggregated.applicability_rate, 1) },
-    { label: "机制投影覆盖", value: formatPercent(aggregated.mechanism_projection_rate, 1) },
-    { label: "酶先验覆盖", value: formatPercent(aggregated.enzyme_prior_support_rate, 1) },
-    { label: "反应类已投影", value: escapeHtml(String(aggregated.reaction_projection_pairs ?? 0)) },
-    { label: "基因证据已投影", value: escapeHtml(String(aggregated.gene_projection_pairs ?? 0)) },
-    { label: "酶先验支持对数", value: escapeHtml(String(aggregated.enzyme_prior_supported_pairs ?? 0)) },
-    { label: "平均酶支持分", value: formatNumber(aggregated.mean_enzyme_support_score, 3) },
-    {
-      label: "Top Metabolizer",
-      value: strongestRow ? escapeHtml(strongestRow.microbe_label || strongestRow.nt_code || "N/A") : "N/A",
-    },
-    {
-      label: "Top Probability",
-      value: strongestRow ? formatNumber(strongestRow.predicted_metabolized_probability, 3) : "N/A",
-    },
-    {
-      label: "Top 反应类",
-      value: strongestRow ? escapeHtml(strongestRow.predicted_reaction_class || "N/A") : "N/A",
-    },
-  ]);
 
   renderTableBody(
     "step2TableBody",
@@ -1058,6 +1191,18 @@ function renderStep2(profile) {
         tags.push(createContextTag("候选产物", "neutral"));
         evidence.push(`候选产物: ${row.predicted_candidate_product_ids}`);
       }
+      if (row.biotransform_sidecar_enabled) {
+        tags.push(createContextTag("BioTx sidecar", "neutral"));
+        evidence.push(
+          `BioTransformer sidecar: support ${formatNumber(row.biotransform_sidecar_support_score, 3)} · 相似度 ${formatNumber(
+            row.biotransform_sidecar_similarity,
+            3
+          )} · ${textOrNA(row.biotransform_sidecar_confidence, "N/A")}`
+        );
+        if (row.biotransform_sidecar_reference_drugs) {
+          evidence.push(`参考药: ${row.biotransform_sidecar_reference_drugs}`);
+        }
+      }
 
       return `
         <tr>
@@ -1084,7 +1229,7 @@ function drawTrajectoryChart(points) {
   const context = canvas.getContext("2d");
   const parent = canvas.parentElement;
   const width = Math.max(320, parent.clientWidth - 8);
-  const height = 320;
+  const height = Math.round(width * 0.75);
   const ratio = window.devicePixelRatio || 1;
   canvas.width = width * ratio;
   canvas.height = height * ratio;
@@ -1157,10 +1302,24 @@ function drawTrajectoryChart(points) {
       values: points.map((row) => Number(row.development_score || 0)),
     },
   ];
+  const hasExperimentalSeries = points.some((row) => {
+    const experimental = Number(row.experimental_development_score);
+    const base = Number(row.development_score);
+    return Number.isFinite(experimental) && Math.abs(experimental - base) > 1e-9;
+  });
+  if (hasExperimentalSeries) {
+    series.push({
+      label: "Experimental Score",
+      color: "#7c3f10",
+      values: points.map((row) => Number(row.experimental_development_score || 0)),
+      dashed: true,
+    });
+  }
 
   series.forEach((seriesItem) => {
     context.strokeStyle = seriesItem.color;
     context.lineWidth = 3;
+    context.setLineDash(seriesItem.dashed ? [8, 6] : []);
     context.beginPath();
     seriesItem.values.forEach((value, index) => {
       const x = xScale(Number(points[index].timepoint || 0));
@@ -1172,6 +1331,7 @@ function drawTrajectoryChart(points) {
       }
     });
     context.stroke();
+    context.setLineDash([]);
 
     seriesItem.values.forEach((value, index) => {
       const x = xScale(Number(points[index].timepoint || 0));
@@ -1213,8 +1373,6 @@ function renderScenarioGrid(rows) {
           <div class="muted">${escapeHtml(row.scenario_description || row.community_source || "")}</div>
           <div class="scenario-metrics">
             <span>健康终值: ${formatNumber(row.final_health_index, 2)}</span>
-            <span>TCG签名分: ${formatNumber(row.final_tcg_health_index, 2)}</span>
-            <span>TCG覆盖率: ${formatNumber(row.final_tcg_mapped_fraction, 3)}</span>
             <span>母药保留: ${formatNumber(row.final_parent_retention_ratio, 3)}</span>
             <span>新版总分: ${formatNumber(row.development_score, 2)}</span>
             <span>旧版总分: ${formatNumber(row.development_score_legacy, 2)}</span>
@@ -1226,41 +1384,34 @@ function renderScenarioGrid(rows) {
 }
 
 function renderStep3Breakdown(summary) {
-  renderDetailList("step3ScoreBreakdown", [
+  const rows = [
     { label: "收益分", value: formatNumber(summary.benefit_subscore_final, 2) },
     { label: "风险分", value: formatNumber(summary.risk_subscore_final, 2) },
     { label: "母药保留收益", value: formatNumber(summary.efficacy_proxy_final, 2) },
     { label: "群落保真收益", value: formatNumber(summary.community_preservation_final, 2) },
-    { label: "TCG签名分", value: formatNumber(summary.final_tcg_health_index, 2) },
-    { label: "TCG Guild 1 占比", value: formatNumber(summary.final_tcg_guild_1_fraction, 3) },
-    { label: "TCG Guild 2 占比", value: formatNumber(summary.final_tcg_guild_2_fraction, 3) },
-    { label: "TCG覆盖率", value: formatNumber(summary.final_tcg_mapped_fraction, 3) },
     { label: "菌群失衡惩罚", value: formatNumber(summary.dysbiosis_penalty_final, 2) },
     { label: "适用域惩罚", value: formatNumber(summary.uncertainty_penalty_final, 2) },
     { label: "代谢负担惩罚", value: formatNumber(summary.metabolite_burden_penalty_final, 2) },
-    { label: "旧版启发式分", value: formatNumber(summary.development_score_legacy, 2) },
-  ]);
+  ];
+  renderDetailList("step3ScoreBreakdown", rows);
 }
 
 function renderStep3(result) {
   const summary = result.summary || {};
+  const experimentalEnabled = Boolean(summary.experimental_multi_product_enabled);
   state.latestTrajectory = result.trajectory_metrics || [];
   document.getElementById("step3TrajectoryChart").dataset.hasData = "true";
-  document.getElementById("step3Summary").innerHTML = [
+  const summaryCards = [
     createStatCard(
       "场景",
       escapeHtml(summary.scenario_name || "N/A"),
       summary.community_source ? `${summary.scenario_description || ""} · ${summary.community_source}` : summary.scenario_description || ""
     ),
     createStatCard("最终健康", formatNumber(summary.final_health_index, 2), "健康指数终值"),
-    createStatCard(
-      "TCG签名",
-      formatNumber(summary.final_tcg_health_index, 2),
-      `A core microbiome signature proxy，覆盖率 ${formatNumber(summary.final_tcg_mapped_fraction, 3)}`
-    ),
     createStatCard("母药保留", formatNumber(summary.final_parent_retention_ratio, 3), "累计给药后剩余母药比例"),
     createStatCard("综合评分", formatNumber(summary.development_score, 2), "综合排序分，结合收益项与惩罚项"),
-  ].join("");
+  ];
+  document.getElementById("step3Summary").innerHTML = summaryCards.join("");
   renderStep3Breakdown(summary);
 
   drawTrajectoryChart(result.trajectory_metrics || []);
@@ -1284,7 +1435,6 @@ function resetStep3Display() {
   document.getElementById("step3Summary").innerHTML = [
     createStatCard("场景", "N/A", "运行 Step 3 后显示"),
     createStatCard("最终健康", "N/A", "健康指数终值"),
-    createStatCard("TCG签名", "N/A", "等待 guild 映射后显示"),
     createStatCard("母药保留", "N/A", "累计给药后剩余母药比例"),
     createStatCard("综合评分", "N/A", "综合排序分"),
   ].join("");
@@ -1293,14 +1443,9 @@ function resetStep3Display() {
     { label: "风险分", value: "N/A" },
     { label: "母药保留收益", value: "N/A" },
     { label: "群落保真收益", value: "N/A" },
-    { label: "TCG签名分", value: "N/A" },
-    { label: "TCG Guild 1 占比", value: "N/A" },
-    { label: "TCG Guild 2 占比", value: "N/A" },
-    { label: "TCG覆盖率", value: "N/A" },
     { label: "菌群失衡惩罚", value: "N/A" },
     { label: "适用域惩罚", value: "N/A" },
     { label: "代谢负担惩罚", value: "N/A" },
-    { label: "旧版启发式分", value: "N/A" },
   ]);
   state.latestTrajectory = [];
   document.getElementById("step3TrajectoryChart").dataset.hasData = "false";
@@ -1321,7 +1466,6 @@ function renderStep3Loading(message = "正在运行 Step 3...") {
   document.getElementById("step3Summary").innerHTML = [
     createStatCard("场景", "运行中", message),
     createStatCard("最终健康", "...", "请稍等"),
-    createStatCard("TCG签名", "...", "正在匹配 guild proxy"),
     createStatCard("母药保留", "...", "请稍等"),
     createStatCard("综合评分", "...", "请稍等"),
   ].join("");
@@ -1330,14 +1474,9 @@ function renderStep3Loading(message = "正在运行 Step 3...") {
     { label: "风险分", value: "..." },
     { label: "母药保留收益", value: "..." },
     { label: "群落保真收益", value: "..." },
-    { label: "TCG签名分", value: "..." },
-    { label: "TCG Guild 1 占比", value: "..." },
-    { label: "TCG Guild 2 占比", value: "..." },
-    { label: "TCG覆盖率", value: "..." },
     { label: "菌群失衡惩罚", value: "..." },
     { label: "适用域惩罚", value: "..." },
     { label: "代谢负担惩罚", value: "..." },
-    { label: "旧版启发式分", value: "..." },
   ]);
 }
 
@@ -1355,6 +1494,11 @@ function buildSimulationPayload() {
     metabolism_scale: Number(document.getElementById("metabolismScaleInput").value),
     effect_scale: Number(document.getElementById("effectScaleInput").value),
     ecology_strength: Number(document.getElementById("ecologyStrengthInput").value),
+    experimental_multi_product_enabled: document.getElementById("experimentalMultiProductEnabledInput").checked,
+    experimental_branching_scale: Number(document.getElementById("experimentalBranchingScaleInput").value),
+    experimental_secondary_metabolism_rate: Number(
+      document.getElementById("experimentalSecondaryMetabolismRateInput").value
+    ),
   };
 }
 
@@ -1376,9 +1520,11 @@ function clearCustomState() {
   state.customSessionId = null;
   state.customProfile = null;
   state.customSelectedPair = null;
+  state.activeProfile = null;
 }
 
 function resetPredictionDisplays() {
+  state.activeProfile = null;
   renderSelectedDrugMeta(null);
   resetStep1Display();
   resetStep2Display();
@@ -1403,6 +1549,7 @@ async function activateLibraryMode(showMessage = false) {
 async function loadPredictions() {
   try {
     if (isCustomMode()) {
+      state.activeProfile = state.customProfile;
       renderModeBanner();
       renderMicrobePanelNote();
       renderSelectedDrugMeta(state.customProfile?.drug);
@@ -1414,12 +1561,14 @@ async function loadPredictions() {
     }
 
     if (!state.selectedDrug) {
+      state.activeProfile = null;
       renderModeBanner();
       renderMicrobePanelNote();
       resetPredictionDisplays();
       return;
     }
     const profile = await fetchJson(`/api/drug-profile?drug=${encodeURIComponent(state.selectedDrug)}`);
+    state.activeProfile = profile;
     renderModeBanner();
     renderMicrobePanelNote();
     renderSelectedDrugMeta(profile.drug);
@@ -1460,6 +1609,9 @@ async function runStep3Simulation() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ drug: state.selectedDrug, ...payload }),
       });
+    }
+    if (payload.experimental_multi_product_enabled && !result.summary?.experimental_multi_product_enabled) {
+      showToast("已勾选实验分支，但本次返回仍是未启用状态；请先强制刷新页面后再重试。", true);
     }
     renderStep3(result);
     showToast("Step 3 模拟完成");
@@ -1513,7 +1665,7 @@ async function predictCustomDrug() {
   const drugName = document.getElementById("customDrugNameInput").value.trim();
 
   if (!smiles) {
-    showToast("请输入新药 SMILES。", true);
+    showSmilesError("请输入新药 SMILES。");
     return;
   }
 
@@ -1533,6 +1685,7 @@ async function predictCustomDrug() {
     state.customSessionId = result.session_id;
     state.customProfile = result.profile;
     state.customSelectedPair = result.selected_pair;
+    state.activeProfile = result.profile;
     renderMicrobePanelNote();
     renderModeBanner();
     renderSelectedDrugMeta(result.profile.drug);
@@ -1547,7 +1700,12 @@ async function predictCustomDrug() {
       await loadScenarioGrid();
     }
   } catch (error) {
-    showToast(error.message, true);
+    const message = String(error?.message || "新药 SMILES 预测失败。");
+    if (/smiles/i.test(message)) {
+      showSmilesError(message);
+    } else {
+      showToast(message, true);
+    }
   } finally {
     setButtonBusy("predictCustomButton", false);
   }
@@ -1646,6 +1804,9 @@ function bindEvents() {
     "metabolismScaleInput",
     "effectScaleInput",
     "ecologyStrengthInput",
+    "experimentalMultiProductEnabledInput",
+    "experimentalBranchingScaleInput",
+    "experimentalSecondaryMetabolismRateInput",
   ].forEach((id) => {
     document.getElementById(id).addEventListener("change", async () => {
       const ok = await runStep3Simulation();
@@ -1659,6 +1820,8 @@ function bindEvents() {
   document.getElementById("refreshPredictionsButton").addEventListener("click", loadPredictions);
   document.getElementById("runSimulationButton").addEventListener("click", runStep3Simulation);
   document.getElementById("compareScenariosButton").addEventListener("click", loadScenarioGrid);
+  document.getElementById("exportStep1Button").addEventListener("click", exportStep1Csv);
+  document.getElementById("exportStep2Button").addEventListener("click", exportStep2Csv);
 
   window.addEventListener("resize", () => {
     const canvas = document.getElementById("step3TrajectoryChart");
@@ -1673,8 +1836,6 @@ async function bootstrap() {
     state.bootstrap = await fetchJson("/api/bootstrap");
     renderHeroStats(state.bootstrap.summary);
     renderBootstrapSummary(state.bootstrap.summary);
-    renderDemoRanking(state.bootstrap.demo_candidates);
-
     state.selectedDrug = null;
     state.selectedDisease = "";
     populateDrugSelect();

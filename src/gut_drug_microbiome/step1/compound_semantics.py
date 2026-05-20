@@ -4,6 +4,10 @@ import re
 
 import numpy as np
 import pandas as pd
+try:
+    from rdkit import Chem
+except Exception:  # pragma: no cover - optional fallback for environments without RDKit
+    Chem = None
 
 
 def _normalize_token(value: object) -> str:
@@ -77,21 +81,91 @@ COMPOUND_FAMILY_RULES = [
 ]
 
 
+def _pick_smiles_text(row: pd.Series) -> str:
+    """Pick the first usable SMILES-like field from a row."""
+    for column in ["main_component_smiles", "smiles", "canonical_smiles_rdkit"]:
+        value = row.get(column)
+        if pd.isna(value):
+            continue
+        text = str(value).strip()
+        if text:
+            return text
+    return ""
+
+
+def _structure_semantic_hints(smiles: str) -> tuple[str, list[str], list[str]]:
+    """Infer lightweight semantic hints from chemical structure when text labels are unavailable."""
+    if not smiles or Chem is None:
+        return "", [], []
+    mol = Chem.MolFromSmiles(smiles)
+    if mol is None:
+        return "", [], []
+
+    aliases: list[str] = []
+    keywords: list[str] = []
+    family = ""
+
+    # Keep rules intentionally simple/robust: only add high-level functional-group tags
+    # that can be consumed by enzyme-prior keyword matching.
+    amide = Chem.MolFromSmarts("[NX3][CX3](=[OX1])[#6]")
+    ester = Chem.MolFromSmarts("[CX3](=[OX1])[OX2][#6]")
+    nitro = Chem.MolFromSmarts("[N+](=O)[O-]")
+    azo = Chem.MolFromSmarts("[N]=[N]")
+    sulfate_ester = Chem.MolFromSmarts("O[SX4](=O)(=O)O")
+    phosphate_ester = Chem.MolFromSmarts("O[P](=O)(O)O")
+    methoxy = Chem.MolFromSmarts("[OX2][CH3]")
+    aromatic_hydroxyl = Chem.MolFromSmarts("c[OX2H]")
+
+    if amide is not None and mol.HasSubstructMatch(amide):
+        aliases.extend(["amide-containing compound"])
+        keywords.extend(["amide", "lactam"])
+    if ester is not None and mol.HasSubstructMatch(ester):
+        aliases.extend(["ester-containing compound"])
+        keywords.extend(["ester", "prodrug ester"])
+    if nitro is not None and mol.HasSubstructMatch(nitro):
+        aliases.extend(["nitro-containing compound"])
+        keywords.extend(["nitro", "nitroaromatic"])
+    if azo is not None and mol.HasSubstructMatch(azo):
+        family = "azo_prodrug_sulfonamide"
+        aliases.extend(["azo compound"])
+        keywords.extend(["azo", "diazo"])
+    if sulfate_ester is not None and mol.HasSubstructMatch(sulfate_ester):
+        aliases.extend(["sulfated compound"])
+        keywords.extend(["sulfated", "sulfate ester"])
+    if phosphate_ester is not None and mol.HasSubstructMatch(phosphate_ester):
+        aliases.extend(["phosphorylated compound"])
+        keywords.extend(["phosphate", "phosphorylated"])
+    if methoxy is not None and mol.HasSubstructMatch(methoxy):
+        keywords.append("methoxy")
+
+    aromatic_oh_matches = (
+        mol.GetSubstructMatches(aromatic_hydroxyl) if aromatic_hydroxyl is not None else tuple()
+    )
+    if len(aromatic_oh_matches) >= 2 and not family:
+        family = "polyphenol"
+        aliases.append("polyphenol-like aromatic")
+        keywords.extend(["polyphenol", "phenol"])
+
+    aliases = list(dict.fromkeys(value for value in aliases if value))
+    keywords = list(dict.fromkeys(value for value in keywords if value))
+    return family, aliases, keywords
+
+
 def annotate_compound_semantics(frame: pd.DataFrame) -> pd.DataFrame:
     """Attach normalized compound-family hints used by promote and cross-feeding explainers."""
     result = frame.copy()
-    chemical_name = result.get("chemical_name", pd.Series("", index=result.index)).fillna("").astype(str)
-    therapeutic_class = result.get("therapeutic_class", pd.Series("", index=result.index)).fillna("").astype(str)
-    therapeutic_effect = result.get("therapeutic_effect", pd.Series("", index=result.index)).fillna("").astype(str)
-    combined_text = (chemical_name + " " + therapeutic_class + " " + therapeutic_effect).str.lower()
-    normalized_text = combined_text.map(_normalize_token)
-
     normalized_names = []
     families = []
     aliases = []
     keywords = []
 
-    for raw_text, compact_text in zip(combined_text, normalized_text, strict=False):
+    for _, row in result.iterrows():
+        chemical_name = "" if pd.isna(row.get("chemical_name")) else str(row.get("chemical_name"))
+        therapeutic_class = "" if pd.isna(row.get("therapeutic_class")) else str(row.get("therapeutic_class"))
+        therapeutic_effect = "" if pd.isna(row.get("therapeutic_effect")) else str(row.get("therapeutic_effect"))
+        raw_text = f"{chemical_name} {therapeutic_class} {therapeutic_effect}".strip().lower()
+        compact_text = _normalize_token(raw_text)
+
         matched_family = ""
         matched_aliases: list[str] = []
         matched_keywords: list[str] = []
@@ -105,6 +179,14 @@ def annotate_compound_semantics(frame: pd.DataFrame) -> pd.DataFrame:
                 matched_keywords = list(dict.fromkeys(rule["keywords"]))
                 canonical_name = _normalize_token(rule["aliases"][0]) if rule["aliases"] else ""
                 break
+
+        structure_family, structure_aliases, structure_keywords = _structure_semantic_hints(_pick_smiles_text(row))
+        if not matched_family and structure_family:
+            matched_family = structure_family
+        if structure_aliases:
+            matched_aliases = list(dict.fromkeys(matched_aliases + structure_aliases))
+        if structure_keywords:
+            matched_keywords = list(dict.fromkeys(matched_keywords + structure_keywords))
 
         if not canonical_name:
             canonical_name = _normalize_token(raw_text.split()[0]) if raw_text.strip() else ""

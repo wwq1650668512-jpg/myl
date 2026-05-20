@@ -19,6 +19,23 @@ def test_compound_semantics_recognizes_sulfonamide_antifolate_family() -> None:
     assert "sulfonamide_antifolate" in families
 
 
+def test_compound_semantics_extracts_structure_keywords_for_custom_smiles() -> None:
+    frame = pd.DataFrame(
+        [
+            {
+                "chemical_name": "custom_test_input",
+                "therapeutic_class": "",
+                "therapeutic_effect": "",
+                "smiles": "CC(=O)NC1=CC=CC=C1",
+            }
+        ]
+    )
+    annotated = annotate_compound_semantics(frame)
+    keywords = str(annotated.loc[0, "compound_semantic_keywords"] or "")
+    assert "amide" in keywords
+    assert "lactam" in keywords
+
+
 def test_antifolate_constraint_boosts_core_butyrate_inhibit_pressure() -> None:
     frame = pd.DataFrame(
         [

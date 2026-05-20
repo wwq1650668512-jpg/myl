@@ -1,12 +1,21 @@
 # 技术路线与实现过程详解
 
-更新日期：`2026-04-14`
+更新日期：`2026-05-14`
 
 本文用于系统说明当前仓库的总体技术路线、数据工程流程、建模策略、评估设计、已有结果与后续扩展方向。它面向三类场景：
 
 - 项目开题或中期汇报；
 - 论文方法部分撰写；
 - 代码仓库交接和后续迭代。
+
+当前版本对应的实现状态可以概括为：
+
+- 已形成 `Step 1 -> Step 2 -> Step 3 -> Web/API` 的可运行闭环；
+- 默认服务和网页已切到 `83` 菌扩展面板，而不是最早的 `40` 菌训练面板；
+- Step 1 采用 `Chemprop 分类 + RDKit/ExtraTrees 回归 + 药物 profile 现实性约束` 的 hybrid 路线；
+- Step 2 采用 `Zimmermann 2019 gold baseline + applicability + enzyme prior + 半机制投影` 的组合路线；
+- Step 3 采用 `interaction-aware panel/cohort simulation + TCG proxy + disease target profile` 的群落推演路线；
+- Web/API 同时支持库内药物查询和未见过 `SMILES` 的新药实时预测。
 
 ## 0. 阅读指南与常见名词解释
 
@@ -151,17 +160,19 @@
 真实开源数据 / 论文补充表
     -> source-specific 标准化
     -> 药物与微生物统一 schema
+    -> RDKit / Chemprop / taxonomy / compound semantics 特征工程
     -> Step 1 药物影响模型
     -> Step 1 hybrid 输出
-    -> Step 1 drug-profile-aware realism constraints
-    -> AMR / 机制先验修正与解释层
-    -> 疾病目录标准化与 IBS / IBS-D / IBS-C 候选补齐
+    -> Step 1 promote / cross-feeding / drug-profile 现实性约束
+    -> AMR / enzyme prior / 疾病知识等显式知识层
+    -> 疾病目录标准化、补充和 IBS / IBS-D / IBS-C 候选补齐
     -> Step 2 候选 pair 组装 + 代谢模型
-    -> reaction class / product / gene evidence 投影
-    -> 集成 pair-level 预测表
+    -> reaction class / product / gene evidence 半机制投影
+    -> 83菌扩展集成 pair-level 预测表
     -> Step 3 群落时间推演
-    -> 真实 cohort 初始化 / TCG proxy 健康签名
-    -> 健康指数与开发评分
+    -> panel-proxy 或真实 cohort 初始化
+    -> interaction-aware 健康指数 / TCG proxy / disease target alignment
+    -> 开发评分、疾病候选、网页与 API 展示
 ```
 
 当前对应的主文档与入口如下：
@@ -172,7 +183,26 @@
 - Step 1 hybrid 接口：[step1_hybrid.md](step1_hybrid.md)
 - Step 2 细化说明：[step2_pipeline.md](step2_pipeline.md)
 - Step 3 细化说明：[step3_pipeline.md](step3_pipeline.md)
+- 网页交互说明：[web_app.md](web_app.md)
 - 统一数据结构：[schemas.py](../src/gut_drug_microbiome/schemas.py)
+
+### 2.1 离线训练层、知识层和在线服务层的分工
+
+当前项目不是一个单脚本模型，而是分成三类层次：
+
+1. 离线数据与模型层
+   这一层负责下载、标准化、训练、批量预测和保存模型资产。典型脚本包括 `normalize_step1_data.py`、`train_step1_baseline.py`、`predict_step1_hybrid.py`、`normalize_step2_zimmermann.py`、`train_step2_baseline.py`、`predict_step2_baseline.py`、`run_step3_simulation.py`。
+2. 显式知识增强层
+   这一层把难以直接从监督学习里稳定学到的知识写成可追溯表和独立模块，例如 `AMR` 规则、`cross_feeding_edges.csv`、`step2_microbe_enzyme_prior_long.csv`、疾病-菌群关系表、`TCG-inspired health signature` 映射表。
+3. 在线服务与展示层
+   这一层由 [service.py](../src/gut_drug_microbiome/web/service.py)、[server.py](../src/gut_drug_microbiome/web/server.py) 和 [webapp/static](../webapp/static) 组成。它读取离线模型和集成预测表，对库内药物直接查询，对新药 `SMILES` 动态生成临时输入表并调用 Step 1 / Step 2 / Step 3，再把 AMR、机制层、疾病候选和健康评分一起返回给前端。
+
+这样拆分的好处是：
+
+- 模型训练可以离线、可复现地跑；
+- 领域知识可以独立迭代，不必每次都重训；
+- 网页端只做实时推理和解释，不承担训练职责；
+- 后续如果替换 Step 2 模型或 Step 3 模拟器，服务层入口可以尽量保持稳定。
 
 ## 3. 全流程共用的数据工程原则
 
@@ -236,7 +266,7 @@
 
 原因很简单：如果某个纠偏逻辑只藏在代码里，后面很难解释“为什么修了、修了哪些、依据是什么”；但如果它被拆成显式表和独立脚本，就可以持续扩展、复核和引用。
 
-当前已经落地的两类知识层就是：
+当前已经落地的几类知识层包括：
 
 - `AMR` 修正层
   - [microbe_amr_reference.csv](../data/processed/amr/microbe_amr_reference.csv)
@@ -252,6 +282,27 @@
 1. 文档、代码和数据表可以互相追溯；
 2. 后续如果要换规则、补来源或升级机制层，不需要把逻辑重新散落到多个脚本里；
 3. 网页展示时也能把“原始预测”和“知识修正后结果”分开呈现。
+
+### 3.7 疾病知识层也按可追溯表管理
+
+当前网页和 API 已经不只展示 `drug x microbe` pair 预测，还会基于疾病-菌群关系给出候选疾病或适应症线索。这一层同样不直接写死在代码里，而是由几张参考表支撑：
+
+- [disease_microbe_dictionary.csv](../data/reference/disease_microbe_dictionary.csv)
+- [disease_microbe_gmrepo_supplement.csv](../data/reference/disease_microbe_gmrepo_supplement.csv)
+- [disease_microbe_gutm_disorder_supplement.csv](../data/reference/disease_microbe_gutm_disorder_supplement.csv)
+- [disease_microbe_gist_supplement.csv](../data/reference/disease_microbe_gist_supplement.csv)
+- [disease_marketed_drug_catalog.csv](../data/reference/disease_marketed_drug_catalog.csv)
+
+疾病知识层在系统中承担三件事：
+
+1. 候选疾病排序
+   Web 服务会把 Step 1 输出和疾病关系表中的 `desired_step1_effect` 对齐，计算某个药物是否更可能把疾病相关菌群往目标方向推动。
+2. 机制层融合
+   原始菌层分会再与 [mechanism_layer.py](../src/gut_drug_microbiome/mechanism_layer.py) 输出的机制平衡分融合，默认融合模式是 `weighted_0.65_0.35`，也就是保留原始疾病-菌群关系为主体，同时加入机制解释。
+3. 疾病状态初始化
+   Step 3 在给定 `disease_name` 时，可以用疾病-菌群关系构造一个 disease-adjusted community，再和药物模拟及 placebo 对照一起计算 `disease_target_alignment_score`。
+
+这层的定位要讲清楚：它提供的是“研究候选线索”和“疾病目标方向的一致性评分”，不是临床适应症推荐，也不是药物疗效证明。
 
 ## 4. Step 1 技术路线：药物对微生物影响建模
 
@@ -580,14 +631,22 @@ Step 1 的统计模型本身仍然是“药物结构 + 微生物元数据 -> 作
 当前 `drug_resistance_rules.csv` 已经有 `263` 条规则，`microbe_amr_reference.csv` 已覆盖当前 `83` 菌面板。  
 需要明确的是：这层修正现在主要体现在网页 / API 返回与交互式解释中，默认离线预测表不一定已经把修正结果永久写回。
 
-### 4.13 Step 1 的 drug-profile-aware realism constraints（新增）
+### 4.13 Step 1 的 compound semantics 与 drug-profile-aware realism constraints
 
-为避免“统计可行但机制不合理”的 Step 1 输出，当前在 `hybrid` 推理末端新增了药物类型感知约束，代码位于 [hybrid.py](../src/gut_drug_microbiome/step1/hybrid.py)。
+为避免“统计可行但机制不合理”的 Step 1 输出，当前在 `hybrid` 推理末端新增了药物类型感知约束，代码位于 [compound_semantics.py](../src/gut_drug_microbiome/step1/compound_semantics.py) 和 [hybrid.py](../src/gut_drug_microbiome/step1/hybrid.py)。
 
-新增两类 profile：
+这里分成两层：
+
+1. `compound semantics`
+   先根据药名、药理类别、治疗效果和 SMILES 结构提示，生成 `compound_semantic_family / aliases / keywords`。这层主要服务于 promote 解释、cross-feeding 匹配、Step 2 酶先验和 Web 新药 `SMILES` 推理。
+2. `drug profile constraints`
+   再把部分药物识别成更高层的 profile，并在最终导出前做现实性约束。
+
+当前已经落地的 profile 包括：
 
 - `eubiotic_modulator`
 - `host_pathway_agent`
+- `sulfonamide_antifolate`
 
 核心约束逻辑：
 
@@ -595,15 +654,30 @@ Step 1 的统计模型本身仍然是“药物结构 + 微生物元数据 -> 作
    对核心产丁酸菌（`Faecalibacterium prausnitzii`, `Roseburia spp.`, `Eubacterium rectale`）的“强抑制”进行惩罚/裁剪，避免出现“核心产丁酸菌几乎全部强抑制”的非现实模式。
 2. `host_pathway_agent`（代表：Lubiprostone）  
    全局下调直接微生物效应，默认偏向 `no_effect`，仅保留高证据尾部效应。
+3. `sulfonamide_antifolate`（代表：Sulfasalazine / Sulfapyridine 等）
+   对叶酸通路更脆弱的厌氧核心菌提升抑制压力，同时避免把全体菌都无差别拉成强抑制。这一层会输出 `predicted_folate_vulnerability_score`，并把命中的 pair 标记为 `antifolate_core_folate_vulnerability_boost`。
 
-这层约束的工程定位是“推理后处理现实性约束”，它不会改训练权重，但会直接影响下游机制层聚合和疾病排序。
+这层约束的工程定位是“推理后处理现实性约束”，它不会改训练权重，但会直接影响下游机制层聚合、疾病排序和 Step 3 群落推演。
 
-对应输出字段也已补齐：
+对应输出字段包括：
 
+- `compound_semantic_family`
+- `compound_semantic_aliases`
+- `compound_semantic_keywords`
 - `step1_drug_profile`
+- `predicted_folate_vulnerability_score`
 - `step1_constraint_applied`
 - `step1_constraint_reason`
 - `summary.json` 中的 `step1_drug_profile_counts` 与 `step1_constraint_summary`
+
+当前 `hybrid_scaffold_v1_current_eval` 摘要显示：
+
+- `sulfonamide_antifolate`: `240` rows
+- `eubiotic_modulator`: `40` rows
+- `antifolate_sensitive_rows_boosted`: `30` rows
+- `eubiotic_core_rows_adjusted`: `3` rows
+
+这部分是一个很典型的“统计模型 + 领域机制护栏”设计：模型仍然给出基础概率和效应强度，但对已知容易出错的药物类别，用保守、可追溯的后处理避免明显违背药理和微生态常识的结果。
 
 ## 5. Step 2 技术路线：微生物对药物代谢建模
 
@@ -850,8 +924,23 @@ Step 2 当前保留：
 - `predicted_mechanism_projection_flag`
 - `predicted_reaction_class`
 - `predicted_reaction_confidence`
+- `predicted_mechanism_support_score`
+- `predicted_mechanism_support_scopes`
 - `predicted_candidate_product_ids`
 - `predicted_evidence_gene_ids`
+
+在半机制投影之外，当前还新增了 `enzyme prior` 层，说明文档见 [step2_enzyme_prior_layer.md](step2_enzyme_prior_layer.md)。这一层把 `83菌 -> 候选酶能力` 和 `酶 -> 反应类型 / 键靶点 / 底物关键词` 写成显式参考表，然后在 Step 2 批量预测时输出：
+
+- `predicted_enzyme_prior_flag`
+- `predicted_enzyme_match_count`
+- `predicted_enzyme_ids`
+- `predicted_enzyme_reaction_classes`
+- `predicted_enzyme_presence_score`
+- `predicted_enzyme_support_score`
+- `predicted_enzyme_step1_promote_support_score`
+- `predicted_enzyme_step1_inhibit_risk_score`
+
+这层的作用不是把酶先验当成实验真值，而是给 Step 2 的统计预测补一个“机制上是否说得通”的软证据，同时也可以反向帮助 Step 1 的 promote 解释。
 
 需要强调的是，这仍然不是“精确产物生成器”，而是一层半机制线索投影器。  
 它的定位是：
@@ -882,13 +971,35 @@ Step 2 当前保留：
 - `9,134 predicted metabolized`
 - `80,423 predicted not_metabolized`
 - `41,123` 个 pair 位于当前 applicability 范围内
+- `6,759` 个 pair 有 enzyme prior 支持
 
 这张 83 菌扩展集成表就是当前 Step 3 的主输入。  
 需要补充说明的是：
 
 - 离线 `predictions.csv` 主要保存 Step 1/Step 2 的基础集成结果；
-- `AMR` 修正与 Step 2 机制投影目前更多是在服务层按需注释，用于网页/API 解释和交互展示；
+- `AMR` 修正、Step 2 机制投影和部分疾病解释字段目前更多是在服务层按需注释，用于网页/API 解释和交互展示；
+- 如果某个批量输出的 `summary.json` 中 `mechanism_reference_path = null` 或 `n_mechanism_projected_rows = 0`，表示该批次没有把半机制投影写进离线 CSV，但服务层仍可在具备 reference 时按需加载；
 - 因此“离线预测表”和“网页展示结果”在解释字段上可能会比基础列更丰富。
+
+### 5.11 BioTransformer / PROXIMAL 风格的实验性产物注释副本
+
+除了主预测表，仓库还提供一个实验性的产物注释增强脚本：
+
+- [build_step3_biotransform_augmented_predictions.py](../scripts/build_step3_biotransform_augmented_predictions.py)
+
+它不会覆盖主 `predictions.csv`，而是生成一个加性副本：
+
+- [predictions_biotransform_experimental.csv](../predictions/step2/baseline_scaffold_v1_83/predictions_biotransform_experimental.csv)
+- [predictions_biotransform_experimental.summary.json](../predictions/step2/baseline_scaffold_v1_83/predictions_biotransform_experimental.summary.json)
+
+当前实验性副本的统计为：
+
+- 总行数：`89,557`
+- 有外部产物注释的 pair：`415`
+- 有外部产物注释的药物：`5`
+- 当前命中的药物包括 `Levodopa`, `Sulfasalazine`, `Chloramphenicol`, `Digoxin`, `Sulindac`
+
+这条线的定位是“给 Step 3 和网页提供产物层探索线索”，不是主模型评估指标，也不应当被解释成已验证的精确产物预测。
 
 ## 6. Step 3 技术路线：肠道群落推演与开发评分
 
@@ -1194,7 +1305,28 @@ development_score
 - “这个药临床上一定更好”
 - “这个药一定更容易开发成功”
 
-### 6.8 Step 3 当前产物与演示结果
+### 6.8 疾病目标画像与 placebo 对照
+
+当前 Step 3 在网页和 API 层已经支持 `disease_name` 输入。它的作用不是直接预测疾病疗效，而是把“给药后菌群变化”放到一个明确的疾病目标方向里解释。
+
+具体流程如下：
+
+1. 服务层根据疾病名读取疾病-菌群关系表，构建 `disease_target_profile`；
+2. 如果用户没有提供真实 `community_table.csv`，服务层可以临时生成一个 disease-adjusted community，作为该疾病背景下的起始群落；
+3. Step 3 正常运行药物模拟，并在每个时间点计算疾病目标方向的一致性；
+4. 系统再运行一个 placebo / no-drug 对照，用来区分“疾病背景本身的轨迹”和“药物带来的额外变化”；
+5. 返回 `disease_target_alignment_score`、`disease_target_coverage` 和 `disease_target_alignment_score_delta_vs_placebo` 等字段。
+
+这一步解决的是一个很实际的问题：如果只看健康指数，可能无法说明某个药物是否真的把疾病相关菌群往目标方向推；如果只看疾病目标分，又可能忽略整体生态损伤。所以当前服务层会同时保留：
+
+- general health / diversity / interaction readouts
+- disease target alignment
+- placebo-adjusted delta
+- development score 的 benefit / risk 拆解
+
+这里也要保留边界：`disease_target_alignment_score` 是“与当前疾病-菌群知识库目标方向的一致性”，不是临床疗效，也不是适应症审批证据。它更适合作为候选排序和机制解释的辅助读数。
+
+### 6.9 Step 3 当前产物与演示结果
 
 Step 3 当前脚本包括：
 
@@ -1217,6 +1349,9 @@ Step 3 当前脚本包括：
 - `interaction_balance_rho`
 - `interaction_balance_shift`
 - `interaction_dysbiosis_penalty`
+- `disease_target_alignment_score`
+- `disease_target_alignment_score_delta_vs_placebo`
+- `disease_target_coverage`
 
 网页和服务层已经额外支持展示：
 
@@ -1243,7 +1378,7 @@ Step 3 当前脚本包括：
 - `MASI curated`：低权重补充或外部验证
 - 分类：`Chemprop`
 - 回归：`RDKit + ExtraTrees`
-- 输出：`hybrid`
+- 输出：`hybrid + compound semantics + drug profile constraints`
 
 ### Step 2
 
@@ -1251,7 +1386,7 @@ Step 3 当前脚本包括：
 - 模型：`ExtraTrees classifier + regressor`
 - 默认部署：`scaffold split + full-fit`
 - 输出：全量 pair 的代谢概率、代谢强度和 applicability
-- 增强层：`reaction class / product / gene evidence` 半机制投影
+- 增强层：`reaction class / product / gene evidence` 半机制投影和 `enzyme prior`
 
 ### Step 3
 
@@ -1259,11 +1394,19 @@ Step 3 当前脚本包括：
 - 模拟器：离散时间群落模拟器
 - 默认初始化：`panel-proxy`
 - 可选初始化：真实 `community_table.csv`
-- 输出：时间轨迹、健康指数、TCG proxy 签名分、开发评分、候选药物排序
+- 输出：时间轨迹、健康指数、TCG proxy 签名分、疾病目标一致性、开发评分、候选药物排序
+
+### Web/API
+
+- 后端：[service.py](../src/gut_drug_microbiome/web/service.py) + [server.py](../src/gut_drug_microbiome/web/server.py)
+- 前端：[webapp/static](../webapp/static)
+- 库内药物：直接读取 83 菌集成预测表
+- 新药：输入合法 `SMILES` 后动态运行 Step 1 / Step 2 / Step 3
+- 疾病候选：返回 `candidate_diseases`、机制融合分、疾病目标对齐分和 placebo delta
 
 ## 8. 当前系统的解释边界
 
-为了保证方法学表述准确，当前系统有 7 个边界需要明确写进任何对外说明中。
+为了保证方法学表述准确，当前系统有 10 个边界需要明确写进任何对外说明中。
 
 1. Step 1 的 `promote` 标签是派生标签，不是 Maier 原文天然三分类。
 2. Step 2 当前已经能较稳定地预测“是否代谢”和“代谢强度”，但还不能稳健地做“新药精确产物预测”。
@@ -1272,10 +1415,13 @@ Step 3 当前脚本包括：
 5. AMR 修正当前主要是服务层知识纠偏，用来压住高风险假阳性，不等同于菌株级 AST 真值。
 6. Step 3 默认仍是 `panel-proxy simulation`，虽然已经支持真实 cohort 初始化，但还没有校准到纵向真实结局。
 7. `development_score` 和 `tcg_health_index` 都是内部比较指标，不应解释成临床药效或注册开发结论。
+8. `disease_target_alignment_score` 和 `candidate_diseases` 是基于当前疾病-菌群知识库的研究线索，不是适应症推荐。
+9. `compound semantics`、`enzyme prior` 和 `drug profile constraints` 是显式知识护栏，会提高解释性，但仍需要外部实验或文献证据持续校正。
+10. `BioTransformer / PROXIMAL` 实验性副本是加性产物注释线索，不是当前主模型的正式产物预测评价结果。
 
 ## 9. 当前代码与数据资产分层
 
-从仓库组织上看，当前系统已经形成了比较清晰的四层结构：
+从仓库组织上看，当前系统已经形成了比较清晰的六层结构：
 
 ### 原始数据层
 
@@ -1290,6 +1436,14 @@ Step 3 当前脚本包括：
 - [data/processed/health_signature](../data/processed/health_signature)
 - [data/processed/step3/cohorts](../data/processed/step3/cohorts)
 
+### 显式知识参考层
+
+- [data/reference/cross_feeding_edges.csv](../data/reference/cross_feeding_edges.csv)
+- [data/reference/step2_microbe_enzyme_prior_long.csv](../data/reference/step2_microbe_enzyme_prior_long.csv)
+- [data/reference/step2_enzyme_function_catalog.csv](../data/reference/step2_enzyme_function_catalog.csv)
+- [data/reference/disease_microbe_dictionary_merged.csv](../data/reference/disease_microbe_dictionary_merged.csv)
+- [data/reference/disease_marketed_drug_catalog.csv](../data/reference/disease_marketed_drug_catalog.csv)
+
 ### 模型资产层
 
 - [models/step1](../models/step1)
@@ -1300,6 +1454,12 @@ Step 3 当前脚本包括：
 - [predictions/step1](../predictions/step1)
 - [predictions/step2](../predictions/step2)
 - [predictions/step3](../predictions/step3)
+
+### 在线服务与前端层
+
+- [src/gut_drug_microbiome/web](../src/gut_drug_microbiome/web)
+- [webapp/static](../webapp/static)
+- [scripts/run_web_app.py](../scripts/run_web_app.py)
 
 这种分层的好处是：后续接入新数据源时，只需要在 `raw -> processed` 之间增加新的 source-specific 标准化模块，而不必改动整个系统。
 
@@ -1412,6 +1572,7 @@ python scripts/normalize_step1_masi.py
 
 ```bash
 /tmp/microbe_env/bin/python scripts/run_step3_simulation.py \
+  --integrated-predictions predictions/step2/baseline_scaffold_v1_83/predictions.csv \
   --drug-query "Metformin hydrochloride" \
   --all-scenarios \
   --output-dir predictions/step3/metformin_hydrochloride
@@ -1421,6 +1582,7 @@ python scripts/normalize_step1_masi.py
 
 ```bash
 /tmp/microbe_env/bin/python scripts/screen_step3_candidates.py \
+  --integrated-predictions predictions/step2/baseline_scaffold_v1_83/predictions.csv \
   --output-dir predictions/step3/candidate_screen_demo \
   --scenario healthy_reference \
   --drug-query "Metformin hydrochloride" \
@@ -1438,6 +1600,7 @@ python scripts/normalize_step1_masi.py
   --output-path data/processed/step3/cohorts/example/sample_01_community.csv
 
 /tmp/microbe_env/bin/python scripts/run_step3_simulation.py \
+  --integrated-predictions predictions/step2/baseline_scaffold_v1_83/predictions.csv \
   --drug-query Digoxin \
   --community-table data/processed/step3/cohorts/example/sample_01_community.csv
 ```
@@ -1455,7 +1618,7 @@ python scripts/normalize_step1_masi.py
 /tmp/microbe_env/bin/python scripts/prepare_health_signature_target_tables.py --overwrite
 ```
 
-这套顺序对应的是当前仓库已经跑通的主链路：`Step 1 -> Step 2 -> Step 3`。
+这套顺序对应的是当前仓库已经跑通的主链路：`Step 1 -> Step 2 -> Step 3 -> Web/API`。
 
 ### 10.5 机制层融合与 case-based benchmark（新增）
 
@@ -1486,6 +1649,42 @@ python scripts/normalize_step1_masi.py
 - ranking benchmark：检查疾病排序行为是否向目标方向移动
 - ecology benchmark：单独检查生态现实性（如产丁酸菌保护、广谱抑制风险、生态风险平衡）
 
+### 10.6 Web/API 本地运行
+
+如果要启动本地网页服务，推荐使用项目里已经验证过的 Python 环境：
+
+```bash
+/tmp/microbe_env/bin/python scripts/run_web_app.py --host 127.0.0.1 --port 8080
+```
+
+或者使用统一 CLI：
+
+```bash
+gut-drug-microbiome web serve --host 127.0.0.1 --port 8080
+```
+
+当前核心 API 包括：
+
+- `GET /api/bootstrap`
+- `GET /api/drug-profile`
+- `GET /api/pair-prediction`
+- `POST /api/custom-drug/predict`
+- `GET /api/custom-drug/pair`
+- `POST /api/step3/simulate`
+- `POST /api/step3/scenario-grid`
+- `POST /api/custom-drug/step3/simulate`
+- `POST /api/custom-drug/step3/scenario-grid`
+
+新药预测最小请求体只需要合法 `SMILES`：
+
+```json
+{
+  "smiles": "CC(=O)Oc1ccccc1C(=O)O"
+}
+```
+
+如果同时传入 `disease_name`，服务层会在 Step 3 中启用疾病目标画像和 placebo 对照。
+
 ## 11. 建议的后续完善路线
 
 在当前基础上，最值得继续推进的是下面几件事。
@@ -1497,12 +1696,14 @@ python scripts/normalize_step1_masi.py
 - 加 `domain of applicability` 与置信度校准
 - 增加 `leave-drug-class-out` 评估
 - 接入更多微生物机制特征，例如 `AGORA2` 或菌株代谢能力 embedding
+- 把 `compound_semantic_family` 的规则从当前高价值类别扩展到更系统的药物家族和天然产物家族
 
 ### 11.2 Step 2
 
 - 接入 `Javdan 2020` 做 community-level 外部验证
 - 接入 `MagMD`, `gutMGene`, `AGORA2`, `Rhea` 做 `reaction class` 和 `product` 增强
 - 将 Step 2 从“发生与否 + 强度 + 半机制投影”继续升级为“发生与否 + 反应类 + 候选产物排序 + 机制证据校准”
+- 将 `enzyme prior` 从 starter / genus 级别逐步升级为 species / strain 级文献和基因组证据
 
 ### 11.3 Step 3
 
@@ -1513,12 +1714,20 @@ python scripts/normalize_step1_masi.py
 - 加入显式微生物种间互作项，而不只依赖共享药物池和归一化产生的间接竞争
 - 增加批量药物筛选和组合给药场景
 
+### 11.4 疾病知识与 Web/API
+
+- 继续合并和去重 `GMrepo / gutMDisorder / GIST / 文献手工表`，降低同病不同名和重复候选问题
+- 给 `candidate_diseases` 增加更系统的证据溯源、PMID/数据库链接和置信度说明
+- 为 `disease_target_alignment_score` 增加更多固定 case benchmark，而不只看示例药物排序
+- 增加 Web API 的回归测试和性能基准，确保新药 `SMILES` 预测链路稳定
+
 ## 12. 一句话总结当前项目状态
 
-截至当前版本，这个项目已经不是单纯的规划，而是形成了一个可以真实运行的三段式系统：
+截至当前版本，这个项目已经不是单纯的规划，而是形成了一个可以真实运行的“三段式建模 + 在线服务”系统：
 
-- Step 1 已有稳定的药物影响预测器、hybrid 输出和第一批 AMR 服务层修正；
-- Step 2 已有真实 gold 数据支撑的代谢 baseline、83 菌全量候选打分和半机制投影层；
-- Step 3 已能在多场景或真实 `community_table` 初始化下完成群落推演，并开始接入 TCG proxy 健康签名。
+- Step 1 已有稳定的药物影响预测器、hybrid 输出、compound semantics、drug profile constraints 和第一批 AMR 服务层修正；
+- Step 2 已有真实 gold 数据支撑的代谢 baseline、83 菌全量候选打分、enzyme prior 和半机制投影层；
+- Step 3 已能在多场景或真实 `community_table` 初始化下完成群落推演，并接入 TCG proxy、interaction-aware 健康分、疾病目标画像和 placebo 对照；
+- Web/API 已支持库内药物查询和未见过 `SMILES` 的新药实时预测，并能返回机制融合后的候选疾病排序。
 
-下一阶段的重点，不再是“从 0 到 1 能不能跑起来”，而是“如何把机制信息、真实 cohort 和更严格外部验证接进来，把系统从可运行原型推进到更可信的研究级框架”。
+下一阶段的重点，不再是“从 0 到 1 能不能跑起来”，而是“如何把机制信息、真实 cohort、疾病知识库和更严格外部验证接进来，把系统从可运行原型推进到更可信的研究级框架”。

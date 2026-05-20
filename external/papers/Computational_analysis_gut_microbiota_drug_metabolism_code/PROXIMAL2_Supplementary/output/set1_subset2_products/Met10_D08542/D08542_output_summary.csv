@@ -1,0 +1,7 @@
+,DrugName,DrugSmiles,EC,ReactionCenter,ProductSmiles,ProductInChiKey
+0,Prontosil,Nc1ccc(N=Nc2ccc(S(N)(=O)=O)cc2)c(N)c1,1.7.1.-,1,Nc1cc(/N=N\c2ccc(S(=O)(=O)O)cc2)ccc1/N=N/c1ccc(S(N)(=O)=O)cc1,YGDBNUJCGSKMBA-MMUCEYJRSA-N
+1,Prontosil,Nc1ccc(N=Nc2ccc(S(N)(=O)=O)cc2)c(N)c1,1.7.1.-,7,Nc1ccc(S(N)(=O)=O)cc1,FDDDEECHVMSUSB-UHFFFAOYSA-N
+2,Prontosil,Nc1ccc(N=Nc2ccc(S(N)(=O)=O)cc2)c(N)c1,1.7.1.-,1,Nc1cc(/N=N/c2ccc(C(=O)O)cc2)ccc1/N=N/c1ccc(S(N)(=O)=O)cc1,RHBSVKGJYOZACK-BQASJOSNSA-N
+3,Prontosil,Nc1ccc(N=Nc2ccc(S(N)(=O)=O)cc2)c(N)c1,1.7.1.-,1,Nc1cc(NO)ccc1/N=N/c1ccc(S(N)(=O)=O)cc1,BXYRFIOCGBZUSC-FOCLMDBBSA-N
+4,Prontosil,Nc1ccc(N=Nc2ccc(S(N)(=O)=O)cc2)c(N)c1,1.7.1.-,19,Nc1ccc(/N=N/c2ccc(S(N)(=O)=O)cc2)c(NO)c1,DBWYLMIKBLTXCK-FOCLMDBBSA-N
+5,Prontosil,Nc1ccc(N=Nc2ccc(S(N)(=O)=O)cc2)c(N)c1,1.7.1.-,2,Nc1cc([N+](=O)[O-])ccc1/N=N/c1ccc(S(N)(=O)=O)cc1,HVOIXTVQXDNBNY-FOCLMDBBSA-N

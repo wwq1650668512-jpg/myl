@@ -1,0 +1,50 @@
+[
+  {
+    "Index": "957",
+    "PMID": "29335008",
+    "ResearchType": "Gut microbiota associated with phenotype",
+    "HumanOrMouse": "Human",
+    "Condition1": "Crohn Disease(MGS)",
+    "Condition1ID": "D003424",
+    "Condition2": "Health(MGS)",
+    "Condition2ID": "D006262",
+    "GutMicrobe": "Alistipes",
+    "GutMicrobeID": "gm0035",
+    "GutMicrobeNcbiID": "239759",
+    "Classification": "genus",
+    "Alteration": "increase",
+    "SequencingTechnology": "Whole metagenomic sequencing"
+  },
+  {
+    "Index": "957",
+    "PMID": "29335008",
+    "ResearchType": "Gut microbiota associated with phenotype",
+    "HumanOrMouse": "Human",
+    "Condition1": "Crohn Disease(MGS)",
+    "Condition1ID": "D003424",
+    "Condition2": "Health(MGS)",
+    "Condition2ID": "D006262",
+    "GutMicrobe": "Dorea",
+    "GutMicrobeID": "gm0266",
+    "GutMicrobeNcbiID": "189330",
+    "Classification": "genus",
+    "Alteration": "increase",
+    "SequencingTechnology": "Whole metagenomic sequencing"
+  },
+  {
+    "Index": "957",
+    "PMID": "29335008",
+    "ResearchType": "Gut microbiota associated with phenotype",
+    "HumanOrMouse": "Human",
+    "Condition1": "Crohn Disease(MGS)",
+    "Condition1ID": "D003424",
+    "Condition2": "Health(MGS)",
+    "Condition2ID": "D006262",
+    "GutMicrobe": "Oscillibacter",
+    "GutMicrobeID": "gm0484",
+    "GutMicrobeNcbiID": "459786",
+    "Classification": "genus",
+    "Alteration": "increase",
+    "SequencingTechnology": "Whole metagenomic sequencing"
+  }
+]

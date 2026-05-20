@@ -177,6 +177,14 @@ def _clip01(value: float) -> float:
     return float(np.clip(float(value), 0.0, 1.0))
 
 
+def _optional_column_map(frame: pd.DataFrame, candidates: list[str]) -> dict[str, object]:
+    """Return the first available nt_code-indexed value map from a list of candidate columns."""
+    for column in candidates:
+        if column in frame.columns:
+            return frame.set_index("nt_code")[column].to_dict()
+    return {}
+
+
 def _evidence_level_weight(value: object) -> float:
     """Map qualitative evidence tiers onto a small numeric scale."""
     key = _canonicalize_key(value)
@@ -362,23 +370,34 @@ def _load_custom_community(
 
 def _resolve_drug_subset(frame: pd.DataFrame, drug_query: str) -> pd.DataFrame:
     """Resolve a user drug query to the matching subset of prediction rows."""
-    candidates = frame.loc[:, ["prestwick_id", "chemical_name"]].drop_duplicates().reset_index(drop=True)
+    available_columns = [column for column in ["prestwick_id", "chemical_name"] if column in frame.columns]
+    if not available_columns:
+        raise ValueError("Prediction frame must contain at least one of: prestwick_id, chemical_name")
+
+    candidates = frame.loc[:, available_columns].drop_duplicates().reset_index(drop=True)
     query_key = _canonicalize_key(drug_query)
-    exact_mask = (
-        candidates["prestwick_id"].map(_canonicalize_key).eq(query_key)
-        | candidates["chemical_name"].map(_canonicalize_key).eq(query_key)
-    )
+    exact_mask = pd.Series(False, index=candidates.index)
+    if "prestwick_id" in candidates.columns:
+        exact_mask = exact_mask | candidates["prestwick_id"].map(_canonicalize_key).eq(query_key)
+    if "chemical_name" in candidates.columns:
+        exact_mask = exact_mask | candidates["chemical_name"].map(_canonicalize_key).eq(query_key)
     if exact_mask.any():
         selected = candidates.loc[exact_mask].iloc[0]
-        return frame[frame["prestwick_id"] == selected["prestwick_id"]].copy()
+        if "prestwick_id" in frame.columns and "prestwick_id" in selected.index:
+            return frame[frame["prestwick_id"] == selected["prestwick_id"]].copy()
+        return frame[frame["chemical_name"] == selected["chemical_name"]].copy()
 
-    contains_mask = candidates["chemical_name"].astype(str).str.contains(drug_query, case=False, na=False)
-    if contains_mask.sum() == 1:
-        selected = candidates.loc[contains_mask].iloc[0]
-        return frame[frame["prestwick_id"] == selected["prestwick_id"]].copy()
-    if contains_mask.sum() > 1:
-        options = candidates.loc[contains_mask, ["prestwick_id", "chemical_name"]].head(10).to_dict(orient="records")
-        raise ValueError(f"drug_query is ambiguous; examples: {options}")
+    if "chemical_name" in candidates.columns:
+        contains_mask = candidates["chemical_name"].astype(str).str.contains(drug_query, case=False, na=False)
+        if contains_mask.sum() == 1:
+            selected = candidates.loc[contains_mask].iloc[0]
+            if "prestwick_id" in frame.columns and "prestwick_id" in selected.index:
+                return frame[frame["prestwick_id"] == selected["prestwick_id"]].copy()
+            return frame[frame["chemical_name"] == selected["chemical_name"]].copy()
+        if contains_mask.sum() > 1:
+            option_columns = [column for column in ["prestwick_id", "chemical_name"] if column in candidates.columns]
+            options = candidates.loc[contains_mask, option_columns].head(10).to_dict(orient="records")
+            raise ValueError(f"drug_query is ambiguous; examples: {options}")
 
     raise ValueError(f"Could not resolve drug_query={drug_query!r}")
 
@@ -640,6 +659,64 @@ def _mean_applicability(
     for nt_code, abundance in abundances.items():
         score += float(abundance) * float(applicability_map.get(nt_code, 0.0))
     return float(score)
+
+
+def _normalize_disease_target_profile(disease_target_profile: dict[str, float] | None) -> dict[str, float]:
+    """Normalize a disease-target profile into signed nt_code weights with unit L1 norm."""
+    if not disease_target_profile:
+        return {}
+    cleaned: dict[str, float] = {}
+    for key, value in disease_target_profile.items():
+        nt_code = str(key).strip()
+        if not nt_code:
+            continue
+        weight = _coerce_float(value, default=0.0)
+        if abs(weight) <= 1e-12:
+            continue
+        cleaned[nt_code] = float(weight)
+    l1 = float(sum(abs(value) for value in cleaned.values()))
+    if l1 <= 0:
+        return {}
+    return {key: float(value / l1) for key, value in cleaned.items()}
+
+
+def _disease_target_alignment(
+    abundances: dict[str, float],
+    baseline_abundances: dict[str, float],
+    disease_target_profile: dict[str, float],
+    alignment_scale: float = 0.20,
+) -> dict[str, float]:
+    """Measure how much current abundance shifts align with disease-target directions."""
+    if not disease_target_profile:
+        return {
+            "disease_target_alignment_raw": 0.0,
+            "disease_target_alignment_score": 50.0,
+            "disease_target_coverage": 0.0,
+        }
+    total_weight = float(sum(abs(weight) for weight in disease_target_profile.values()))
+    if total_weight <= 0:
+        return {
+            "disease_target_alignment_raw": 0.0,
+            "disease_target_alignment_score": 50.0,
+            "disease_target_coverage": 0.0,
+        }
+    matched_weight = 0.0
+    alignment_raw = 0.0
+    for nt_code, weight in disease_target_profile.items():
+        baseline = float(baseline_abundances.get(nt_code, 0.0))
+        current = float(abundances.get(nt_code, 0.0))
+        if baseline <= 0 and current <= 0:
+            continue
+        matched_weight += abs(weight)
+        alignment_raw += float(weight) * (current - baseline)
+    coverage = float(np.clip(matched_weight / total_weight, 0.0, 1.0))
+    alignment_01 = _clip01(0.5 + alignment_raw / max(float(alignment_scale), 1e-6))
+    effective_alignment = float(coverage * alignment_01 + (1.0 - coverage) * 0.5)
+    return {
+        "disease_target_alignment_raw": float(alignment_raw),
+        "disease_target_alignment_score": float(100.0 * effective_alignment),
+        "disease_target_coverage": float(coverage),
+    }
 
 
 def _build_applicability_map(drug_frame: pd.DataFrame) -> dict[str, float]:
@@ -969,6 +1046,10 @@ def run_step3_simulation(
     interaction_scale: float = 0.18,
     cooperative_metabolism_boost: float = 0.35,
     abundance_floor: float = 1e-6,
+    disease_target_profile: dict[str, float] | None = None,
+    experimental_multi_product_enabled: bool = False,
+    experimental_branching_scale: float = 0.35,
+    experimental_secondary_metabolism_rate: float = 0.10,
 ) -> dict[str, object]:
     """Run the Step 3 community simulation and export trajectories plus summaries.
 
@@ -993,6 +1074,13 @@ def run_step3_simulation(
         interaction_scale: Strength of the interaction-aware feedback term.
         cooperative_metabolism_boost: Extra metabolism gain in cross-feeding-dominant states.
         abundance_floor: Minimum abundance floor applied during renormalization.
+        disease_target_profile: Optional signed nt_code profile (+ promote target, - inhibit target)
+            used to compute disease-target alignment rewards.
+        experimental_multi_product_enabled: When True, emit a parallel experimental score that
+            inflates metabolite burden for drugs with multiple predicted products.
+        experimental_branching_scale: Extra direct product burden scale under the experimental mode.
+        experimental_secondary_metabolism_rate: Fraction of the experimental product pool allowed
+            to recursively generate downstream burden per step.
 
     Returns:
         A summary dictionary describing the simulation outputs and final metrics.
@@ -1028,6 +1116,14 @@ def run_step3_simulation(
     ).to_dict()
     metabolism_prob_map = drug_frame.set_index("nt_code")["predicted_metabolized_probability"].to_dict()
     depletion_map = drug_frame.set_index("nt_code")["predicted_parent_depletion_fraction"].to_dict()
+    experimental_product_count_map = _optional_column_map(
+        drug_frame,
+        ["experimental_biotransform_product_count", "predicted_candidate_product_count"],
+    )
+    experimental_fraction_in_gut_map = _optional_column_map(
+        drug_frame,
+        ["experimental_biotransform_fraction_in_gut"],
+    )
     applicability_map = _build_applicability_map(drug_frame)
     interaction_model = _build_interaction_model(
         drug_frame=drug_frame,
@@ -1035,6 +1131,8 @@ def run_step3_simulation(
         cross_feeding_reference_path=cross_feeding_reference_path,
         enzyme_function_catalog_path=enzyme_function_catalog_path,
     )
+    normalized_disease_target_profile = _normalize_disease_target_profile(disease_target_profile)
+    disease_target_enabled = bool(normalized_disease_target_profile)
     prestwick_id = _first_nonempty_text(drug_frame, "prestwick_id", default=drug_query)
     chemical_name = _first_nonempty_text(drug_frame, "chemical_name", default=prestwick_id or drug_query)
 
@@ -1043,6 +1141,7 @@ def run_step3_simulation(
     cumulative_dose = float(initial_dose)
     current_parent_drug = float(initial_dose)
     current_metabolite_pool = 0.0
+    current_experimental_metabolite_pool = 0.0
 
     history_rows: list[dict[str, object]] = []
     abundance_rows: list[dict[str, object]] = []
@@ -1087,16 +1186,47 @@ def run_step3_simulation(
         community_preservation_score = 0.65 * health["health_index"] + 0.35 * stability_score
         metabolite_burden_ratio = 0.0 if cumulative_dose <= 0 else current_metabolite_pool / cumulative_dose
         metabolite_burden_penalty = 100.0 * max(0.0, min(1.0, metabolite_burden_ratio))
-        benefit_subscore = 0.55 * efficacy_proxy + 0.45 * community_preservation_score
+        active_experimental_pool = (
+            current_experimental_metabolite_pool if experimental_multi_product_enabled else current_metabolite_pool
+        )
+        experimental_metabolite_burden_ratio = 0.0 if cumulative_dose <= 0 else active_experimental_pool / cumulative_dose
+        experimental_metabolite_burden_penalty = 100.0 * max(0.0, min(1.0, experimental_metabolite_burden_ratio))
+        disease_target_metrics = _disease_target_alignment(
+            abundances=current_abundances,
+            baseline_abundances=baseline_abundances,
+            disease_target_profile=normalized_disease_target_profile,
+        )
+        disease_target_alignment_score = float(disease_target_metrics["disease_target_alignment_score"])
+        if disease_target_enabled:
+            benefit_subscore = (
+                0.45 * efficacy_proxy
+                + 0.35 * community_preservation_score
+                + 0.20 * disease_target_alignment_score
+            )
+        else:
+            benefit_subscore = 0.55 * efficacy_proxy + 0.45 * community_preservation_score
         risk_subscore = (
             0.38 * dysbiosis_penalty
             + 0.22 * interaction_dysbiosis_penalty
             + 0.22 * uncertainty_penalty
             + 0.18 * metabolite_burden_penalty
         )
+        experimental_risk_subscore = (
+            0.38 * dysbiosis_penalty
+            + 0.22 * interaction_dysbiosis_penalty
+            + 0.22 * uncertainty_penalty
+            + 0.18 * experimental_metabolite_burden_penalty
+        )
         development_score_balance = benefit_subscore - risk_subscore
+        experimental_development_score_balance = benefit_subscore - experimental_risk_subscore
         development_score_raw = development_score_balance
         development_score = _sigmoid_score(development_score_balance, center=45.0, scale=8.0)
+        experimental_development_score_raw = experimental_development_score_balance
+        experimental_development_score = _sigmoid_score(
+            experimental_development_score_balance,
+            center=45.0,
+            scale=8.0,
+        )
         development_score_legacy_raw = efficacy_proxy - 0.7 * dysbiosis_penalty - 0.3 * uncertainty_penalty
         development_score_legacy = max(0.0, min(100.0, development_score_legacy_raw))
         history_rows.append(
@@ -1104,6 +1234,7 @@ def run_step3_simulation(
                 "timepoint": timepoint,
                 "parent_drug_concentration": float(current_parent_drug),
                 "aggregate_metabolite_pool": float(current_metabolite_pool),
+                "experimental_aggregate_metabolite_pool": float(active_experimental_pool),
                 "cumulative_dose": float(cumulative_dose),
                 "parent_retention_ratio": float(parent_retention),
                 "health_index": health["health_index"],
@@ -1138,15 +1269,26 @@ def run_step3_simulation(
                 "uncertainty_penalty": float(uncertainty_penalty),
                 "metabolite_burden_ratio": float(metabolite_burden_ratio),
                 "metabolite_burden_penalty": float(metabolite_burden_penalty),
+                "experimental_metabolite_burden_ratio": float(experimental_metabolite_burden_ratio),
+                "experimental_metabolite_burden_penalty": float(experimental_metabolite_burden_penalty),
                 "efficacy_proxy": float(efficacy_proxy),
                 "community_preservation_score": float(community_preservation_score),
+                "disease_target_alignment_raw": float(disease_target_metrics["disease_target_alignment_raw"]),
+                "disease_target_alignment_score": float(disease_target_alignment_score),
+                "disease_target_coverage": float(disease_target_metrics["disease_target_coverage"]),
+                "disease_target_reward_enabled": bool(disease_target_enabled),
                 "benefit_subscore": float(benefit_subscore),
                 "risk_subscore": float(risk_subscore),
+                "experimental_risk_subscore": float(experimental_risk_subscore),
                 "development_score_balance": float(development_score_balance),
+                "experimental_development_score_balance": float(experimental_development_score_balance),
                 "development_score_legacy_raw": float(development_score_legacy_raw),
                 "development_score_legacy": float(development_score_legacy),
                 "development_score_raw": float(development_score_raw),
                 "development_score": float(development_score),
+                "experimental_development_score_raw": float(experimental_development_score_raw),
+                "experimental_development_score": float(experimental_development_score),
+                "experimental_multi_product_enabled": bool(experimental_multi_product_enabled),
             }
         )
         for nt_code, abundance in sorted(current_abundances.items()):
@@ -1172,6 +1314,7 @@ def run_step3_simulation(
         )
         raw_abundances: dict[str, float] = {}
         weighted_metabolism = 0.0
+        weighted_branching_signal = 0.0
         for nt_code, current_abundance in current_abundances.items():
             effect_score = _coerce_float(effect_map.get(nt_code), default=0.0)
             ecology_pull = ecology_strength * (baseline_abundances.get(nt_code, 0.0) - current_abundance)
@@ -1211,7 +1354,16 @@ def run_step3_simulation(
                     1.0,
                 )
             )
-            weighted_metabolism += current_abundance * metabolized_probability * max(depletion_strength, 0.05 * metabolized_probability)
+            metabolism_pressure = (
+                current_abundance * metabolized_probability * max(depletion_strength, 0.05 * metabolized_probability)
+            )
+            weighted_metabolism += metabolism_pressure
+
+            product_count = max(_coerce_float(experimental_product_count_map.get(nt_code), default=0.0), 0.0)
+            extra_product_score = _clip01(max(product_count - 1.0, 0.0) / 4.0)
+            fraction_in_gut = _clip01(_coerce_float(experimental_fraction_in_gut_map.get(nt_code), default=0.0))
+            branching_signal = extra_product_score * (0.55 + 0.45 * fraction_in_gut)
+            weighted_branching_signal += metabolism_pressure * branching_signal
 
         current_abundances = _normalize_abundances(raw_abundances, minimum=abundance_floor)
         cooperative_metabolism_multiplier = 1.0 + cooperative_metabolism_boost * max(
@@ -1227,6 +1379,22 @@ def run_step3_simulation(
             0.0,
             current_metabolite_pool * (1.0 - product_clearance_rate) + parent_consumed,
         )
+        branching_ratio = 0.0 if weighted_metabolism <= 1e-8 else _clip01(weighted_branching_signal / weighted_metabolism)
+        if experimental_multi_product_enabled:
+            experimental_direct_generation = parent_consumed * (1.0 + experimental_branching_scale * branching_ratio)
+            experimental_secondary_generation = (
+                current_experimental_metabolite_pool
+                * max(float(experimental_secondary_metabolism_rate), 0.0)
+                * branching_ratio
+            )
+            current_experimental_metabolite_pool = max(
+                0.0,
+                current_experimental_metabolite_pool * (1.0 - product_clearance_rate)
+                + experimental_direct_generation
+                + experimental_secondary_generation,
+            )
+        else:
+            current_experimental_metabolite_pool = current_metabolite_pool
         cumulative_dose += dose_input
         _record_timepoint(timepoint=timepoint)
 
@@ -1259,6 +1427,14 @@ def run_step3_simulation(
         "ecology_strength": float(ecology_strength),
         "interaction_scale": float(interaction_scale),
         "cooperative_metabolism_boost": float(cooperative_metabolism_boost),
+        "experimental_multi_product_enabled": bool(experimental_multi_product_enabled),
+        "experimental_branching_scale": float(experimental_branching_scale),
+        "experimental_secondary_metabolism_rate": float(experimental_secondary_metabolism_rate),
+        "experimental_product_annotation_pairs": int(
+            pd.Series(list(experimental_product_count_map.values())).map(lambda value: _coerce_float(value, default=0.0)).gt(0).sum()
+        ),
+        "disease_target_profile_size": int(len(normalized_disease_target_profile)),
+        "disease_target_reward_enabled": bool(disease_target_enabled),
         "cross_feeding_reference_path": None if cross_feeding_reference_path is None else str(cross_feeding_reference_path),
         "enzyme_function_catalog_path": None if enzyme_function_catalog_path is None else str(enzyme_function_catalog_path),
         "interaction_reference_edge_count": int(interaction_model["curated_reference_edge_count"]),
@@ -1292,19 +1468,28 @@ def run_step3_simulation(
         "final_parent_drug_concentration": float(final_row["parent_drug_concentration"]),
         "final_parent_retention_ratio": float(final_row["parent_retention_ratio"]),
         "final_aggregate_metabolite_pool": float(final_row["aggregate_metabolite_pool"]),
+        "final_experimental_aggregate_metabolite_pool": float(final_row["experimental_aggregate_metabolite_pool"]),
         "mean_applicability_final": float(final_row["mean_applicability"]),
         "final_stability": float(final_row["stability"]),
         "efficacy_proxy_final": float(final_row["efficacy_proxy"]),
         "community_preservation_final": float(final_row["community_preservation_score"]),
+        "disease_target_alignment_raw_final": float(final_row["disease_target_alignment_raw"]),
+        "disease_target_alignment_score_final": float(final_row["disease_target_alignment_score"]),
+        "disease_target_coverage_final": float(final_row["disease_target_coverage"]),
         "benefit_subscore_final": float(final_row["benefit_subscore"]),
         "risk_subscore_final": float(final_row["risk_subscore"]),
+        "experimental_risk_subscore_final": float(final_row["experimental_risk_subscore"]),
         "dysbiosis_penalty_final": float(final_row["dysbiosis_penalty"]),
         "uncertainty_penalty_final": float(final_row["uncertainty_penalty"]),
         "metabolite_burden_penalty_final": float(final_row["metabolite_burden_penalty"]),
+        "experimental_metabolite_burden_penalty_final": float(final_row["experimental_metabolite_burden_penalty"]),
         "development_score_balance": float(final_row["development_score_balance"]),
+        "experimental_development_score_balance": float(final_row["experimental_development_score_balance"]),
         "development_score_legacy": float(final_row["development_score_legacy"]),
         "development_score_legacy_raw": float(final_row["development_score_legacy_raw"]),
         "development_score": float(final_row["development_score"]),
+        "experimental_development_score": float(final_row["experimental_development_score"]),
+        "experimental_development_score_raw": float(final_row["experimental_development_score_raw"]),
         "development_score_raw": float(final_row["development_score_raw"]),
         "trajectory_metrics_path": str(output_dir / "trajectory_metrics.csv"),
         "trajectory_abundances_path": str(output_dir / "trajectory_abundances.csv"),

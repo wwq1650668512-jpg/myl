@@ -1,0 +1,166 @@
+{
+  "predictions_path": "/mnt/e/毕业/predictions/step1/hybrid_scaffold_v1_current_eval/predictions.csv",
+  "prediction_column": "predicted_effect_label_hybrid",
+  "truth_column": "effect_label",
+  "all_labeled": {
+    "name": "all_labeled",
+    "n_rows": 43109,
+    "accuracy": 0.9217796747778886,
+    "balanced_accuracy": 0.6931451023236637,
+    "macro_f1": 0.5696647609665128,
+    "weighted_f1": 0.9289683747193115,
+    "promote_precision": 0.006369426751592357,
+    "promote_recall": 0.25,
+    "promote_f1": 0.012422360248447204,
+    "promote_support": 4,
+    "label_counts_true": {
+      "no_effect": 37990,
+      "inhibit": 5115,
+      "promote": 4
+    },
+    "label_counts_pred": {
+      "no_effect": 35591,
+      "inhibit": 7361,
+      "promote": 157
+    },
+    "confusion_matrix_labels": [
+      "inhibit",
+      "no_effect",
+      "promote"
+    ],
+    "confusion_matrix": [
+      [
+        4631,
+        484,
+        0
+      ],
+      [
+        2729,
+        35105,
+        156
+      ],
+      [
+        1,
+        2,
+        1
+      ]
+    ],
+    "classification_report": {
+      "inhibit": {
+        "precision": 0.6291264773807906,
+        "recall": 0.9053763440860215,
+        "f1-score": 0.7423853799294645,
+        "support": 5115.0
+      },
+      "no_effect": {
+        "precision": 0.98634486246523,
+        "recall": 0.9240589628849697,
+        "f1-score": 0.9541865427216265,
+        "support": 37990.0
+      },
+      "promote": {
+        "precision": 0.006369426751592357,
+        "recall": 0.25,
+        "f1-score": 0.012422360248447204,
+        "support": 4.0
+      },
+      "accuracy": 0.9217796747778886,
+      "macro avg": {
+        "precision": 0.540613588865871,
+        "recall": 0.6931451023236637,
+        "f1-score": 0.5696647609665128,
+        "support": 43109.0
+      },
+      "weighted avg": {
+        "precision": 0.9438690003146405,
+        "recall": 0.9217796747778886,
+        "f1-score": 0.9289683747193115,
+        "support": 43109.0
+      }
+    }
+  },
+  "gold_only": {
+    "name": "gold_only",
+    "n_rows": 43109,
+    "accuracy": 0.9217796747778886,
+    "balanced_accuracy": 0.6931451023236637,
+    "macro_f1": 0.5696647609665128,
+    "weighted_f1": 0.9289683747193115,
+    "promote_precision": 0.006369426751592357,
+    "promote_recall": 0.25,
+    "promote_f1": 0.012422360248447204,
+    "promote_support": 4,
+    "label_counts_true": {
+      "no_effect": 37990,
+      "inhibit": 5115,
+      "promote": 4
+    },
+    "label_counts_pred": {
+      "no_effect": 35591,
+      "inhibit": 7361,
+      "promote": 157
+    },
+    "confusion_matrix_labels": [
+      "inhibit",
+      "no_effect",
+      "promote"
+    ],
+    "confusion_matrix": [
+      [
+        4631,
+        484,
+        0
+      ],
+      [
+        2729,
+        35105,
+        156
+      ],
+      [
+        1,
+        2,
+        1
+      ]
+    ],
+    "classification_report": {
+      "inhibit": {
+        "precision": 0.6291264773807906,
+        "recall": 0.9053763440860215,
+        "f1-score": 0.7423853799294645,
+        "support": 5115.0
+      },
+      "no_effect": {
+        "precision": 0.98634486246523,
+        "recall": 0.9240589628849697,
+        "f1-score": 0.9541865427216265,
+        "support": 37990.0
+      },
+      "promote": {
+        "precision": 0.006369426751592357,
+        "recall": 0.25,
+        "f1-score": 0.012422360248447204,
+        "support": 4.0
+      },
+      "accuracy": 0.9217796747778886,
+      "macro avg": {
+        "precision": 0.540613588865871,
+        "recall": 0.6931451023236637,
+        "f1-score": 0.5696647609665128,
+        "support": 43109.0
+      },
+      "weighted avg": {
+        "precision": 0.9438690003146405,
+        "recall": 0.9217796747778886,
+        "f1-score": 0.9289683747193115,
+        "support": 43109.0
+      }
+    }
+  },
+  "gold_promote_binary": {
+    "promote_binary_precision": 0.006369426751592357,
+    "promote_binary_recall": 0.25,
+    "promote_binary_f1": 0.012422360248447204,
+    "promote_binary_support": 4,
+    "promote_pred_positive": 157
+  }
+}

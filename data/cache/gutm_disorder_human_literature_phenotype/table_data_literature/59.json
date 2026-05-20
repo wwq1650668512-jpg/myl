@@ -1,0 +1,18 @@
+[
+  {
+    "Index": "59",
+    "PMID": "23776434",
+    "ResearchType": "Gut microbiota associated with phenotype",
+    "HumanOrMouse": "Human",
+    "Condition1": "Crohn Disease",
+    "Condition1ID": "D003424",
+    "Condition2": "Control",
+    "Condition2ID": "D035061",
+    "GutMicrobe": "Parabacteroides distasonis",
+    "GutMicrobeID": "gm0496",
+    "GutMicrobeNcbiID": "823",
+    "Classification": "species",
+    "Alteration": "decrease",
+    "SequencingTechnology": "16s rRNA gene sequencing"
+  }
+]

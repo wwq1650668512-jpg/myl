@@ -1,0 +1,14 @@
+{
+  "microbe_table_path": "data/processed/step1/step1_microbe_table.csv",
+  "endpoint": "https://sparql.uniprot.org/sparql",
+  "reviewed_only": false,
+  "n_input_microbes": 83,
+  "n_processed_microbes": 29,
+  "n_resolved_taxa": 23,
+  "n_candidate_evidence_rows": 183,
+  "n_raw_protein_hits": 3407,
+  "n_unresolved_microbes": 6,
+  "evidence_output_path": "data/reference/step2_uniprot_enzyme_candidate_evidence.csv",
+  "raw_output_path": "data/reference/step2_uniprot_protein_enzyme_hits.csv",
+  "unresolved_output_path": "data/reference/step2_uniprot_unresolved_taxa.csv"
+}

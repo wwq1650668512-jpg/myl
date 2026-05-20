@@ -68,6 +68,23 @@ def main() -> None:
     parser.add_argument("--metabolism-scale", type=float, default=0.85, help="Scaling factor for microbial metabolism.")
     parser.add_argument("--effect-scale", type=float, default=0.55, help="Scaling factor for Step 1 drug pressure.")
     parser.add_argument("--ecology-strength", type=float, default=0.20, help="Pull back toward the baseline community.")
+    parser.add_argument(
+        "--experimental-multi-product-enabled",
+        action="store_true",
+        help="Enable an additive experimental metabolite-branching score without changing the base score.",
+    )
+    parser.add_argument(
+        "--experimental-branching-scale",
+        type=float,
+        default=0.35,
+        help="Additional direct product burden scale under the experimental mode.",
+    )
+    parser.add_argument(
+        "--experimental-secondary-metabolism-rate",
+        type=float,
+        default=0.10,
+        help="Recursive downstream-burden rate for the experimental metabolite pool.",
+    )
     args = parser.parse_args()
 
     drug_slug = _slugify(args.drug_query)
@@ -86,6 +103,9 @@ def main() -> None:
         "metabolism_scale": args.metabolism_scale,
         "effect_scale": args.effect_scale,
         "ecology_strength": args.ecology_strength,
+        "experimental_multi_product_enabled": args.experimental_multi_product_enabled,
+        "experimental_branching_scale": args.experimental_branching_scale,
+        "experimental_secondary_metabolism_rate": args.experimental_secondary_metabolism_rate,
     }
 
     if args.all_scenarios and args.community_table is None:

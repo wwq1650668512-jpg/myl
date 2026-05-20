@@ -1,0 +1,7 @@
+,DrugName,DrugSmiles,EC,ReactionCenter,ProductSmiles,ProductInChiKey
+0,Balsalazide,O=C(O)CCNC(=O)c1ccc(/N=N/c2ccc(O)c(C(=O)O)c2)cc1,1.7.1.-,13,Nc1ccc(C(=O)NCCC(=O)O)cc1,VHAXWROFYVPXMZ-UHFFFAOYSA-N
+1,Balsalazide,O=C(O)CCNC(=O)c1ccc(/N=N/c2ccc(O)c(C(=O)O)c2)cc1,1.7.1.-,14,Nc1ccc(O)c(C(=O)O)c1,KBOPZPXVLCULAV-UHFFFAOYSA-N
+2,Balsalazide,O=C(O)CCNC(=O)c1ccc(/N=N/c2ccc(O)c(C(=O)O)c2)cc1,2.4.1.191,19,O=C(O)CCNC(=O)c1ccc(/N=N/c2ccc(OC3OC(C(=O)O)C(O)C(O)C3O)c(C(=O)O)c2)cc1,BZEBGEBMGKBDPK-OCEACIFDSA-N
+3,Balsalazide,O=C(O)CCNC(=O)c1ccc(/N=N/c2ccc(O)c(C(=O)O)c2)cc1,3.2.1.31,19,O=C(O)CCNC(=O)c1ccc(/N=N/c2ccc(OC3OC(C(=O)O)C(O)C(O)C3O)c(C(=O)O)c2)cc1,BZEBGEBMGKBDPK-OCEACIFDSA-N
+4,Balsalazide,O=C(O)CCNC(=O)c1ccc(/N=N/c2ccc(O)c(C(=O)O)c2)cc1,3.2.1.21,19,O=C(O)CCNC(=O)c1ccc(/N=N/c2ccc(OC3OC(CO)C(O)C(O)C3O)c(C(=O)O)c2)cc1,XXKMDOGUWRFXQT-OCEACIFDSA-N
+5,Balsalazide,O=C(O)CCNC(=O)c1ccc(/N=N/c2ccc(O)c(C(=O)O)c2)cc1,2.4.1.172,19,O=C(O)CCNC(=O)c1ccc(/N=N/c2ccc(OC3OC(CO)C(O)C(O)C3O)c(C(=O)O)c2)cc1,XXKMDOGUWRFXQT-OCEACIFDSA-N

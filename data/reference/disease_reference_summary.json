@@ -1,0 +1,22 @@
+{
+  "disease_microbe_input": "/mnt/e/毕业/data/肠道疾病与微生物的相互影响(1).xlsx",
+  "disease_drug_input": "/mnt/e/毕业/data/疾病与上市药物(1).xlsx",
+  "disease_microbe_output": "/mnt/e/毕业/data/reference/disease_microbe_dictionary.csv",
+  "disease_drug_output": "/mnt/e/毕业/data/reference/disease_marketed_drug_catalog.csv",
+  "n_disease_microbe_rows": 235,
+  "n_diseases_with_microbe_relations": 16,
+  "n_disease_drug_rows": 225,
+  "n_diseases_with_marketed_drugs": 12,
+  "desired_step1_effect_counts": {
+    "inhibit": 126,
+    "promote": 101,
+    "unknown": 8
+  },
+  "taxon_level_counts": {
+    "genus": 110,
+    "species": 88,
+    "family": 25,
+    "phylum": 9,
+    "order": 3
+  }
+}

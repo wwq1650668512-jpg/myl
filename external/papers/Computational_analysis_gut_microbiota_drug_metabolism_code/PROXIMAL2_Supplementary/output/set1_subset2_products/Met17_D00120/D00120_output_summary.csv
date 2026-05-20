@@ -1,0 +1,2 @@
+,DrugName,DrugSmiles,EC,ReactionCenter,ProductSmiles,ProductInChiKey
+0,Sulindac,CC1=C(CC(=O)O)c2cc(F)ccc2/C1=C\c1ccc(S(C)=O)cc1,4.1.1.-,13,CC1=C(CC(=O)O)c2cc(F)cc(C(=O)O)c2/C1=C\c1ccc(S(C)=O)cc1,HLEFHOIDWCBKKW-APSNUPSMSA-N

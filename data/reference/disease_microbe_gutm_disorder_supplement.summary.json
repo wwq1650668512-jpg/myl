@@ -1,0 +1,37 @@
+{
+  "output_path": "/mnt/e/毕业/data/reference/disease_microbe_gutm_disorder_supplement.csv",
+  "n_candidate_nodes": 71,
+  "candidate_node_counts_by_branch": {
+    "literature_human_phenotype": 58,
+    "raw_human_phenotype": 13
+  },
+  "n_mapped_rows_raw": 2062,
+  "mapped_rows_by_branch": {
+    "literature_human_phenotype": 701,
+    "raw_human_phenotype": 1361
+  },
+  "n_rows": 1384,
+  "n_diseases": 14,
+  "disease_counts": {
+    "结直肠癌（CRC）": 355,
+    "克罗恩病（CD）": 277,
+    "溃疡性结肠炎（UC）": 236,
+    "炎症性肠病（IBD）": 144,
+    "多发性硬化（MS）": 126,
+    "类风湿关节炎（RA）": 96,
+    "肠易激综合征（IBS）": 59,
+    "便秘（Constipation）": 46,
+    "腹泻（Diarrhea）": 16,
+    "自身免疫性甲状腺疾病（AITD）": 11,
+    "自身免疫性肝炎（AIH）": 7,
+    "肠易激综合征-便秘型（IBS-C）": 5,
+    "肠易激综合征-腹泻型（IBS-D）": 5,
+    "系统性红斑狼疮（SLE）": 1
+  },
+  "confidence_counts": {
+    "medium": 668,
+    "low": 584,
+    "high": 132
+  },
+  "failed_nodes": []
+}

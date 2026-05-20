@@ -1,0 +1,31 @@
+[
+  {
+    "Index": "460",
+    "PMID": "29969462",
+    "ResearchType": "Gut microbiota associated with phenotype",
+    "HumanOrMouse": "Human",
+    "Condition1": "Autoimmune liver disease",
+    "Condition2": "Health",
+    "Condition2ID": "D006262",
+    "GutMicrobe": "Clostridium subcluster XIVa",
+    "GutMicrobeID": "gm1326",
+    "Classification": "genus",
+    "Alteration": "decrease",
+    "SequencingTechnology": "16s rRNA gene sequencing"
+  },
+  {
+    "Index": "460",
+    "PMID": "29969462",
+    "ResearchType": "Gut microbiota associated with phenotype",
+    "HumanOrMouse": "Human",
+    "Condition1": "Autoimmune liver disease",
+    "Condition2": "Health",
+    "Condition2ID": "D006262",
+    "GutMicrobe": "Lactobacillales",
+    "GutMicrobeID": "gm0392",
+    "GutMicrobeNcbiID": "186826",
+    "Classification": "order",
+    "Alteration": "increase",
+    "SequencingTechnology": "16s rRNA gene sequencing"
+  }
+]

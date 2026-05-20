@@ -1,0 +1,9 @@
+,DrugName,DrugSmiles,EC,ReactionCenter,ProductSmiles,ProductInChiKey
+0,Caffeic acid,O=C(O)/C=C/c1ccc(O)c(O)c1,2.4.1.191,10,O=C(O)/C=C/c1ccc(OC2OC(C(=O)O)C(O)C(O)C2O)c(O)c1,LTGOIJNQWZWJRF-DUXPYHPUSA-N
+1,Caffeic acid,O=C(O)/C=C/c1ccc(O)c(O)c1,3.2.1.31,10,O=C(O)/C=C/c1ccc(OC2OC(C(=O)O)C(O)C(O)C2O)c(O)c1,LTGOIJNQWZWJRF-DUXPYHPUSA-N
+2,Caffeic acid,O=C(O)/C=C/c1ccc(O)c(O)c1,2.4.1.191,12,O=C(O)/C=C/c1ccc(O)c(OC2OC(C(=O)O)C(O)C(O)C2O)c1,BSOMSDFTZKNUHY-DUXPYHPUSA-N
+3,Caffeic acid,O=C(O)/C=C/c1ccc(O)c(O)c1,3.2.1.31,12,O=C(O)/C=C/c1ccc(O)c(OC2OC(C(=O)O)C(O)C(O)C2O)c1,BSOMSDFTZKNUHY-DUXPYHPUSA-N
+4,Caffeic acid,O=C(O)/C=C/c1ccc(O)c(O)c1,3.2.1.21,10,O=C(O)/C=C/c1ccc(OC2OC(CO)C(O)C(O)C2O)c(O)c1,OHEYCHKLBCPRLZ-DUXPYHPUSA-N
+5,Caffeic acid,O=C(O)/C=C/c1ccc(O)c(O)c1,3.2.1.21,12,O=C(O)/C=C/c1ccc(O)c(OC2OC(CO)C(O)C(O)C2O)c1,QOPSZFXPZWQLOG-DUXPYHPUSA-N
+6,Caffeic acid,O=C(O)/C=C/c1ccc(O)c(O)c1,2.4.1.172,10,O=C(O)/C=C/c1ccc(OC2OC(CO)C(O)C(O)C2O)c(O)c1,OHEYCHKLBCPRLZ-DUXPYHPUSA-N
+7,Caffeic acid,O=C(O)/C=C/c1ccc(O)c(O)c1,2.4.1.172,12,O=C(O)/C=C/c1ccc(O)c(OC2OC(CO)C(O)C(O)C2O)c1,QOPSZFXPZWQLOG-DUXPYHPUSA-N

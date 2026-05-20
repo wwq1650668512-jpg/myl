@@ -1,0 +1,105 @@
+nt_code,microbe_label,species_label,species_name,genus,family,phylum,ENZ001,ENZ002,ENZ003,ENZ004,ENZ005,ENZ006,ENZ007,ENZ008,ENZ009,ENZ010,ENZ011,ENZ012,ENZ013,ENZ014,ENZ015,ENZ016
+NT5001,Bacteroides vulgatus,Bacteroides vulgatus,Bacteroides vulgatus (S1) DSM No.: 1447,Bacteroides,Bacteroidaceae,Bacteroidetes,0.8,0.8,,,0.6,0.6,0.8,0.6,0.8,,,,,0.6,,0.8
+NT5002,Bacteroides uniformis,Bacteroides uniformis,Bacteroides uniformis (S2) DSM No.: 6597,Bacteroides,Bacteroidaceae,Bacteroidetes,0.8,0.8,,,0.8,0.8,0.8,0.8,0.8,,,,0.35,0.8,0.35,0.8
+NT5003,Bacteroides fragilis (NT),Bacteroides fragilis (NT),Bacteroides fragilis nontoxigenic (S2)  DSM No.: 2151,Bacteroides,Bacteroidaceae,Bacteroidetes,1.0,0.8,,,0.8,0.8,0.8,0.8,0.8,0.8,,,,0.8,0.35,0.8
+NT5004,Bacteroides thetaiotaomicron,Bacteroides thetaiotaomicron,Bacteroides thetaiotaomicron (S2) DSM No.: 2079,Bacteroides,Bacteroidaceae,Bacteroidetes,0.8,0.8,,,0.8,0.8,0.8,0.8,0.8,,,,,0.8,0.35,0.8
+NT5005,Blautia hansenii,Blautia hansenii,Blautia hansenii (S1) DSMZ 20583,,,,,0.8,,,0.8,0.8,,,0.8,,,,0.35,0.8,0.35,
+NT5005,Blautia hansenii,Blautia hansenii,Blautia hansenii (S1) DSMZ 20583,Blautia,,,0.35,,,,,,,,,,0.6,0.35,,,,
+NT5006,Clostridium ramosum,Clostridium ramosum,Clostridium ramosum (S2) DSMZ 1402,Clostridium,Clostridiaceae,Firmicutes,0.6,,,,,0.35,,,,,0.8,0.8,0.6,,,
+NT5007,Lactobacillus gasseri,Lactobacillus gasseri,Lactobacillus gasseri (S1) DSMZ 20243,,,,,0.8,,,0.8,0.8,0.8,,0.35,1.0,,,,0.8,0.35,0.8
+NT5008,Pseudoflavonifractor capillosus,Pseudoflavonifractor capillosus,Pseudoflavonifractor capillosus (S2) DSMZ 23940,,,,,0.8,,,0.8,0.8,,0.8,0.8,,,,0.35,0.8,0.35,0.8
+NT5008,Pseudoflavonifractor capillosus,Pseudoflavonifractor capillosus,Pseudoflavonifractor capillosus (S2) DSMZ 23940,Pseudoflavonifractor,,,,,,,,,,,,,0.8,0.8,,,,
+NT5009,Eubacterium rectale,Eubacterium rectale,Eubacterium rectale (S1) DSM No.: 17629,Eubacterium,Eubacteriaceae,Firmicutes,0.6,,,,,,,,,,0.8,0.8,0.6,,,
+NT5010,Faecalibacterium prausnitzii,Faecalibacterium prausnitzii,Faecalibacterium prausnitzii (S2) DSM No.: 17677,,,,0.8,0.8,,,0.8,0.8,0.8,0.8,0.8,,,,0.35,0.8,0.35,0.8
+NT5010,Faecalibacterium prausnitzii,Faecalibacterium prausnitzii,Faecalibacterium prausnitzii (S2) DSM No.: 17677,Faecalibacterium,,,,,,,,,,,,,0.6,0.35,,,,
+NT5011,Roseburia intestinalis,Roseburia intestinalis,Roseburia intestinalis (S1) DSM No.: 14610,Roseburia,Lachnospiraceae,Firmicutes,0.8,0.8,,,0.8,0.8,0.8,0.8,0.8,0.8,0.6,0.35,0.35,0.8,0.35,0.8
+NT5012,Roseburia inulinivorans,Roseburia inulinivorans,Roseburia inulinivorans (S1) DSM No.: 16841,,,,,0.8,,,0.8,0.8,0.8,,0.8,0.8,,,0.35,0.8,0.35,
+NT5012,Roseburia inulinivorans,Roseburia inulinivorans,Roseburia inulinivorans (S1) DSM No.: 16841,Roseburia,,,,,,,,,,,,,0.6,0.35,,,,
+NT5013,Butyrivibrio crossotus,Butyrivibrio crossotus,Butyrivibrio crossotus (S1) DSM No.: 2876,,,,,0.8,,,0.8,0.8,,,0.8,0.8,,,0.35,0.8,0.35,
+NT5013,Butyrivibrio crossotus,Butyrivibrio crossotus,Butyrivibrio crossotus (S1) DSM No.: 2876,Butyrivibrio,,,,,,,,,0.6,,,,0.35,,,,,0.6
+NT5014,Alistipes putredinis,Alistipes putredinis,Alistipes putredinis (S2) DSMZ 17216,,,,,0.8,,,0.8,0.8,,,0.8,,,,,0.8,0.35,0.8
+NT5014,Alistipes putredinis,Alistipes putredinis,Alistipes putredinis (S2) DSMZ 17216,Alistipes,,,0.6,,,,,,0.35,,,,,,,,,
+NT5015,Parvimonas micra,Parvimonas micra,Parvimonas micra (S2) DSMZ 20468,,,,,,,,0.8,0.8,,,,,,,,0.8,,
+NT5016,Dialister invisus,Dialister invisus,Dialister invisus (S2) DSMZ 15470,,,,,0.8,,,0.8,0.8,,,,,,,0.35,0.8,,0.8
+NT5016,Dialister invisus,Dialister invisus,Dialister invisus (S2) DSMZ 15470,Dialister,,,,,,0.35,,,,,,,,,,,,
+NT5017,Veillonella parvula,Veillonella parvula,Veillonella parvula (S2) DSMZ 2008,Veillonella,Veillonellaceae,Firmicutes,,,,0.35,,,,,,,,,,,,
+NT5018,Haemophilus parainfluenzae,Haemophilus parainfluenzae,Haemophilus parainfluenzae (S2) DSMZ 8978,,,,,0.8,,0.35,0.8,0.8,,,0.8,,,,0.35,0.8,0.35,0.8
+NT5019,Prevotella copri,Prevotella copri,Prevotella copri (S1) DSMZ 18205,Prevotella,Prevotellaceae,Bacteroidetes,,0.6,,,,,0.6,0.35,0.6,,,,,0.35,,0.6
+NT5020,Prevotella melaninogenica,Prevotella melaninogenica,Prevotella melaninogenica (S2) DSMZ 7089,,,,,,,,0.8,0.8,,,0.8,,,,,0.8,0.35,0.8
+NT5020,Prevotella melaninogenica,Prevotella melaninogenica,Prevotella melaninogenica (S2) DSMZ 7089,Prevotella,,,,0.6,,,,,0.6,0.35,,,,,,,,
+NT5021,Akkermansia muciniphila,Akkermansia muciniphila,Akkermansia muciniphila (S1) DSM No.: 22959,Akkermansia,Verrucomicrobiaea,Verrucomicrobia,,0.8,,,0.8,0.8,,,0.8,,,,,0.8,0.35,0.8
+NT5022,Bifidobacterium adolescentis,Bifidobacterium adolescentis,Bifidobacterium adolescentis (S1) DSM No.: 20083,Bifidobacterium,Bifidobacteriaceae,Actinobacteria,,0.8,,,0.8,0.8,0.8,0.8,1.0,0.8,,,,0.8,0.35,0.8
+NT5023,Bifidobacterium longum,Bifidobacterium longum,Bifidobacterium longum subsp. infantis (S1) DSM No.: 20088,,,,,0.8,,,0.8,0.8,0.8,,0.8,0.8,,,,0.8,0.35,0.8
+NT5023,Bifidobacterium longum,Bifidobacterium longum,Bifidobacterium longum subsp. infantis (S1) DSM No.: 20088,Bifidobacterium,,,,,,,,,,0.8,,,,,,,,
+NT5024,Eggerthella lenta,Eggerthella lenta,Eggerthella lenta (S2) DSM No.: 2243,Eggerthella,Coriobacteriaceae,Actinobacteria,,,,,0.8,0.8,,,,,,,0.35,0.8,,0.8
+NT5025,Fusobacterium nucleatum,Fusobacterium nucleatum,Fusobacterium nucleatum subsp. nucleatum (S2) DSM No.: 15643,Fusobacterium,Fusobacteriaceae,Fusobacteria,,,,,0.8,0.8,,,,,,,0.35,0.8,,0.8
+NT5026,Clostridium bolteae,Clostridium bolteae,Clostridium bolteae (S1) DSM No.: 15670,Clostridium,Clostridiaceae,Firmicutes,0.6,,,,,0.35,,,,,0.8,0.8,0.6,,,
+NT5027,Dorea longicatena,Dorea longicatena,Dorea longicatena (S1) DSM No.: 13814,,,,,0.8,,,0.8,0.8,,,0.8,0.8,,,0.35,0.8,0.35,
+NT5027,Dorea longicatena,Dorea longicatena,Dorea longicatena (S1) DSM No.: 13814,Dorea,,,,,,,,,,,,,0.35,0.35,,,,
+NT5028,Bifidobacterium longum,Bifidobacterium longum,Bifidobacterium longum subsp. longum (S1) DSM No.: 20219,Bifidobacterium,Bifidobacteriaceae,Actinobacteria,,0.8,,,0.8,0.8,0.8,0.8,0.8,1.0,,,,0.8,0.35,0.8
+NT5029,Fusobacterium nucleatum,Fusobacterium nucleatum,Fusobacterium nucleatum subsp. animalis (S2) DSM 19679,,,,,,,,0.8,0.8,,,,,,,0.35,0.8,,0.8
+NT5030,Fusobacterium nucleatum,Fusobacterium nucleatum,Fusobacterium nucleatum subsp. vincentii (S2) DSM 19507,,,,,,,,0.8,0.8,,,,,,,0.35,0.8,,0.8
+NT5031,Clostridium perfringens,Clostridium perfringens,Clostridium perfringens (S2) DSM 11782,,,,1.0,0.8,,,0.8,0.8,,,1.0,1.0,,,0.35,0.8,0.35,0.8
+NT5031,Clostridium perfringens,Clostridium perfringens,Clostridium perfringens (S2) DSM 11782,Clostridium,,,,,,,,,,,,,0.8,0.8,,,,
+NT5032,Clostridium perfringens,Clostridium perfringens,Clostridium perfringens (S2) DSM 756,Clostridium,Clostridiaceae,Firmicutes,1.0,0.8,,,0.8,0.8,,,1.0,1.0,0.8,0.8,0.35,0.8,0.35,0.8
+NT5033,Bacteroides fragilis (ET),Bacteroides fragilis (ET),Bacteroides fragilis enterotoxigenic (S2) ATCC No: 43860,Bacteroides,Bacteroidaceae,Bacteroidetes,1.0,0.8,,,0.8,0.8,0.8,0.8,0.8,0.8,,,,0.8,0.35,0.8
+NT5034,Methanobrevibacter smithii,Methanobrevibacter smithii,Methanobrevibacter smithii (S1) DSM 2374,,,,,,,,0.8,0.8,,,,0.8,,,0.35,0.8,,
+NT5035,Desulfovibrio piger,Desulfovibrio piger,Desulfovibrio piger (S1) DSM 749,,,,,0.8,,,0.8,0.8,,,,,,,,0.8,,0.8
+NT5036,Bilophila wadsworthia,Bilophila wadsworthia,Bilophila wadsworthia (S2) ATCC No: 49260,Bilophila,Desulfovibrionaceae,Proteobacteria,,0.35,,,0.8,0.8,,,,0.35,,,0.35,0.8,,0.8
+NT5037,Clostridium saccharolyticum,Clostridium saccharolyticum,Clostridium saccharolyticum (S1) DSM No: 2544,Clostridium,Clostridiaceae,Firmicutes,0.6,,,,,0.35,,,,,0.8,0.8,0.6,,,
+NT5038,Streptococcus salivarius,Streptococcus salivarius,Streptococcus salivarius (S2) DSMZ No: 20560,Streptococcus,Streptococcaceae,Firmicutes,,,,,0.8,0.8,0.35,,0.35,0.6,,,0.35,0.8,0.35,0.8
+NT5039,Actinomyces odontolyticus,Actinomyces odontolyticus,Actinomyces odontolyticus (S2) DSM No: 43331,,,,,0.8,,,0.8,0.8,,,0.8,,,,,0.8,0.35,0.8
+NT5040,Eubacterium siraeum,Eubacterium siraeum,Eubacterium siraeum (S1) DSM No: 15702,,,,,,,,0.8,0.8,0.8,,0.8,0.8,,,0.35,0.8,0.35,0.8
+NT5040,Eubacterium siraeum,Eubacterium siraeum,Eubacterium siraeum (S1) DSM No: 15702,Eubacterium,,,0.6,,,,,,,,,,0.8,0.8,,,,
+NT5041,Lactobacillus acidophilus,Lactobacillus acidophilus,Lactobacillus acidophilus (S1) ATCC No: 700936,,,,,,,,0.8,0.8,0.8,0.8,1.0,0.8,,,0.35,0.8,0.35,
+NT5042,Lactobacillus paracasei,Lactobacillus paracasei,Lactobacillus paracasei (S1) ATCC No: SD5275,Lactobacillus,Lactobacillaceae,Firmicutes,0.8,,,,0.8,0.8,0.8,,0.8,0.8,,,0.35,0.8,0.35,0.8
+NT5043,Bifidobacterium animalis,Bifidobacterium animalis,Bifidobacterium animalis subsp. lactis BL-04 (S1) DGCC2908,,,,,,,,0.8,0.8,0.8,,0.8,1.0,,,,0.8,0.35,0.8
+NT5043,Bifidobacterium animalis,Bifidobacterium animalis,Bifidobacterium animalis subsp. lactis BL-04 (S1) DGCC2908,Bifidobacterium,,,,,,,,,,0.8,,,,,,,,
+NT5044,Bifidobacterium animalis,Bifidobacterium animalis,Bifidobacterium animalis subsp. lactis BI-07 (S1),Bifidobacterium,,,,,,,,,0.8,0.8,0.8,0.6,,,,,,
+NT5045,Ruminococcus bromii,Ruminococcus bromii,Ruminococcus bromii (S1) ATCC No: 27255,Ruminococcus,Ruminococcaceae,Firmicutes,,,,,,,0.6,,0.6,,,,0.35,,,0.8
+NT5046,Ruminococcus gnavus,Ruminococcus gnavus,Ruminococcus gnavus (S1) ATCC No: 29149,Blautia,Lachnospiraceae,Firmicutes,0.8,0.8,,,0.8,0.8,0.8,0.8,0.8,0.8,0.6,0.35,0.35,0.8,0.35,
+NT5047,Ruminococcus torques,Ruminococcus torques,Ruminococcus torques (S1) ATCC No: 27756,Blautia,Lachnospiraceae,Firmicutes,0.35,0.8,,,0.8,0.8,0.8,0.8,0.8,,0.6,0.35,0.35,0.8,0.35,
+NT5048,Coprococcus comes,Coprococcus comes,Coprococcus comes (S1) ATCC No: 27758,Coprococcus,Lachnospiraceae,Firmicutes,,0.8,,,0.8,0.8,,0.8,0.8,0.8,0.35,0.35,0.35,0.8,0.35,
+NT5049,Bacteroides dorei,Bacteroides dorei,Bacteroides dorei (S1) DSM 17855/JCM 13471 strain 175; 483217,Bacteroides,,,0.8,0.8,,,0.6,0.6,0.8,0.6,0.8,,,,,0.6,,0.8
+NT5050,Bacteroides caccae,Bacteroides caccae,"Bacteroides caccae (S2) DSM 19024/ATCC 43185, CCUG 38735, CIP 104201, JCM 9498, NCTC 13051, VPI 3452A Type strain; 411901",Bacteroides,Bacteroidaceae,Bacteroidetes,0.8,0.8,,,0.8,0.8,0.8,0.6,0.8,,,,,0.8,0.35,0.8
+NT5051,Bacteroides eggerthii,Bacteroides eggerthii,"Bacteroides eggerthii (S2) DSM 20697/ATCC 27754, NCTC 11155 Type strain; 483216",,,,,,,,0.8,0.8,0.8,0.8,0.8,,,,,0.8,0.35,0.8
+NT5051,Bacteroides eggerthii,Bacteroides eggerthii,"Bacteroides eggerthii (S2) DSM 20697/ATCC 27754, NCTC 11155 Type strain; 483216",Bacteroides,,,0.8,0.8,,,,,,,,,,,,,,
+NT5052,Bacteroides clarus,Bacteroides clarus,"Bacteroides clarus (S1) DSM 22519/JCM 16067 Type strain, A 20, YIT 12056; 762984",,,,,,,,0.8,0.8,0.8,,0.8,,,,,0.8,0.35,0.8
+NT5052,Bacteroides clarus,Bacteroides clarus,"Bacteroides clarus (S1) DSM 22519/JCM 16067 Type strain, A 20, YIT 12056; 762984",Bacteroides,,,0.8,0.8,,,,,,0.6,,,,,,,,
+NT5053,Bacteroides coprocola,Bacteroides coprocola,"Bacteroides coprocola (S1) DSM 17136/JCM 12979 M16, type strain; 470145",,,,,0.8,,,0.8,0.8,0.8,0.8,0.8,,,,,0.8,0.35,0.8
+NT5053,Bacteroides coprocola,Bacteroides coprocola,"Bacteroides coprocola (S1) DSM 17136/JCM 12979 M16, type strain; 470145",Bacteroides,,,0.8,,,,,,,,,,,,,,,
+NT5054,Bacteroides ovatus,Bacteroides ovatus,"Bacteroides ovatus (S2) ATCC-8483 NCTC 11153, Type strain; 411476",Bacteroides,Bacteroidaceae,Bacteroidetes,0.8,0.8,,,0.8,0.8,1.0,0.8,1.0,,,,,0.8,0.35,0.8
+NT5055,Bacteroides stercoris,Bacteroides stercoris,Bacteroides stercoris (S2) HM-1036 CC31F; 1073351,,,,,0.8,,,0.8,0.8,0.8,,0.8,,,,,0.8,0.35,0.8
+NT5055,Bacteroides stercoris,Bacteroides stercoris,Bacteroides stercoris (S2) HM-1036 CC31F; 1073351,Bacteroides,,,0.8,,,,,,,0.6,,,,,,,,
+NT5056,Bacteroides vulgatus,Bacteroides vulgatus,Bacteroides vulgatus (S2) HM-720 Strain CL09T03C04; 99789,Bacteroides,,,0.8,0.8,,,0.6,0.6,0.8,0.6,0.8,,,,,0.6,,0.8
+NT5057,Bacteroides fragilis,Bacteroides fragilis,Bacteroides fragilis (S2) HM-20 Strain 3_1_12; 457424,Bacteroides,Bacteroidaceae,Bacteroidetes,1.0,0.8,,,0.8,0.8,0.8,0.8,0.8,0.8,,,,0.8,0.35,0.8
+NT5058,Bacteroides fragilis,Bacteroides fragilis,Bacteroides fragilis (S2) HM-709 Strain CL07T00C01; 997882,,,,1.0,0.8,,,0.8,0.8,0.8,0.8,0.8,0.8,,,,0.8,0.35,0.8
+NT5059,Bacteroides fragilis,Bacteroides fragilis,Bacteroides fragilis (S2) HM-710 Strain CL07T12C05; 997883,,,,1.0,0.8,,,0.8,0.8,0.8,0.8,0.8,0.8,,,,0.8,0.35,0.8
+NT5060,Bacteroides fragilis,Bacteroides fragilis,Bacteroides fragilis (S2) HM-711 Strain CL05T00C42; 997880,,,,1.0,0.8,,,0.8,0.8,0.8,0.8,0.8,0.8,,,,0.8,0.35,0.8
+NT5061,Bacteroides fragilis,Bacteroides fragilis,Bacteroides fragilis (S2) HM-714 Strain CL03T12C07; 997879,,,,1.0,0.8,,,0.8,0.8,0.8,0.8,0.8,0.8,,,,0.8,0.35,0.8
+NT5062,Bacteroides fragilis,Bacteroides fragilis,Bacteroides fragilis (S2) HM-712,,,,1.0,0.8,,,0.8,0.8,0.8,0.8,0.8,0.8,,,,0.8,0.35,0.8
+NT5063,Bacteroides fragilis,Bacteroides fragilis,Bacteroides fragilis (S2) HM-713,,,,1.0,0.8,,,0.8,0.8,0.8,0.8,0.8,0.8,,,,0.8,0.35,0.8
+NT5064,Bacteroides xylanisolvens,Bacteroides xylanisolvens,Bacteroides xylanisolvens (S2) HM-722,Bacteroides,Bacteroidaceae,Bacteroidetes,0.8,0.8,,,0.8,0.8,0.8,0.8,0.8,0.8,,,,0.8,0.35,0.8
+NT5065,Bacteroides uniformis,Bacteroides uniformis,Bacteroides uniformis (S2) HM-715,Bacteroides,Bacteroidaceae,Bacteroidetes,0.8,0.8,,,0.8,0.8,0.8,0.8,0.8,,,,0.35,0.8,0.35,0.8
+NT5066,Bacteroides uniformis,Bacteroides uniformis,Bacteroides uniformis (S2) HM-716,,,,0.8,0.8,,,0.8,0.8,0.8,0.8,0.8,,,,0.35,0.8,0.35,0.8
+NT5067,Eubacterium halii,Eubacterium halii,Eubacterium halii (S1) DSM 3353,,,,,0.8,,,0.8,0.8,,,0.8,0.8,,,0.35,0.8,0.35,0.8
+NT5067,Eubacterium halii,Eubacterium halii,Eubacterium halii (S1) DSM 3353,Eubacterium,,,0.6,,,,,,,,,,0.8,0.8,,,,
+NT5068,Eubacterium limosum,Eubacterium limosum,Eubacterium limosum (S2) DSM 20543,Eubacterium,,,0.6,,,,,,,,,,0.8,0.8,0.6,,,
+NT5069,Blautia obeum,Blautia obeum,Blautia obeum (S1) DSM 25238,Blautia,Lachnospiraceae,Firmicutes,0.35,0.8,,,0.8,0.8,0.8,0.8,0.8,0.8,0.6,0.35,0.35,0.8,0.35,
+NT5070,Alistipes shahii,Alistipes shahii,Alistipes shahii (S1) DSM 19121,,,,0.8,,,,0.8,0.8,0.8,,0.8,0.8,,,,0.8,0.35,0.8
+NT5070,Alistipes shahii,Alistipes shahii,Alistipes shahii (S1) DSM 19121,Alistipes,,,,0.6,,,,,,,,,,,,,,
+NT5071,Parabacteroides merdae,Parabacteroides merdae,Parabacteroides merdae (S1) 19495,Parabacteroides,Porphyromonadaceae,Bacteroidetes,0.6,0.6,,,0.8,0.8,0.35,0.8,0.8,,,,,0.8,0.35,0.8
+NT5072,Streptococcus parasanguinis,Streptococcus parasanguinis,Streptococcus parasanguinis (S2) DSM 6778,Streptococcus,Streptococcaceae,Firmicutes,,0.8,,,0.8,0.8,0.8,0.8,0.8,0.6,,,0.35,0.8,0.35,0.8
+NT5073,Collinsella aerofaciens,Collinsella aerofaciens,Collinsella aerofaciens (S2) DSM 3979,Collinsella,Coriobacteriaceae,Actinobacteria,,0.8,,,0.8,0.8,0.8,,0.35,0.8,,,,0.8,0.35,0.8
+NT5074,Parabacteroides distasonis,Parabacteroides distasonis,Parabacteroides distasonis (S2) DSM 20701,Parabacteroides,Porphyromonadaceae,Bacteroidetes,0.6,0.8,,,0.8,0.8,0.8,0.8,0.8,,,,,0.8,0.35,0.8
+NT5075,Eubacterium eligens,Eubacterium eligens,Eubacterium eligens (S1) DSM 3376,Eubacterium,Eubacteriaceae,Firmicutes,0.6,,,,,,,,,,0.8,0.8,0.6,,,
+NT5076,Dorea formicigenerans,Dorea formicigenerans,Dorea formicigenerans (S1) DSM 3992,Dorea,Lachnospiraceae,Firmicutes,,0.8,,,0.8,0.8,,,0.8,,0.35,0.35,0.35,0.8,0.35,
+NT5077,Escherichia coli IAI1,Escherichia coli IAI1,Escherichia coli (S1) IAI1,Escherichia,Enterobacteriaceae,Proteobacteria,1.0,,0.8,1.0,0.6,0.6,,,,,,,,,,
+NT5078,Escherichia coli ED1a,Escherichia coli ED1a,Escherichia coli (S1) ED1a,Escherichia,Enterobacteriaceae,Proteobacteria,1.0,,0.8,1.0,0.6,0.6,,,,,,,,,,
+NT5079,Roseburia hominis,Roseburia hominis,Roseburia hominis (S1) DSM 16839,Roseburia,Lachnospiraceae,Firmicutes,0.8,,,,0.8,0.8,0.8,0.8,0.8,0.8,0.6,0.35,0.35,0.8,0.35,
+NT5080,Coprococcus catus,Coprococcus catus,Coprococcus catus (S1) ATCC 27761,,,,,,,,0.8,0.8,,,0.8,0.8,,,0.35,0.8,0.35,
+NT5080,Coprococcus catus,Coprococcus catus,Coprococcus catus (S1) ATCC 27761,Coprococcus,,,,,,,,,,,,,0.35,0.35,,,,
+NT5081,Odoribacter splanchnicus,Odoribacter splanchnicus,Odoribacter splanchnicus (S2) DSM 20712,Odoribacter,Porphyromonadaceae,Bacteroidetes,,0.8,,,0.8,0.8,0.8,,0.8,,,,,0.8,0.35,0.8
+NT5082,Clostridium leptum,Clostridium leptum,Clostridium leptum (S1) DSM 753,,,,,0.8,,,0.8,0.8,,0.8,0.8,,,,0.35,0.8,0.35,0.8
+NT5082,Clostridium leptum,Clostridium leptum,Clostridium leptum (S1) DSM 753,Clostridium,,,0.6,,,,,,,,,,0.8,0.8,,,,
+NT5083,Clostridium difficile,Clostridium difficile,Clostridium difficile (TODO),Peptoclostridium,Clostridiaceae,Firmicutes,0.35,,,,0.8,0.8,0.35,,,,0.35,0.35,0.35,0.8,,0.8

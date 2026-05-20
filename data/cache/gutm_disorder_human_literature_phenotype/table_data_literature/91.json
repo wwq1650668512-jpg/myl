@@ -1,0 +1,34 @@
+[
+  {
+    "Index": "91",
+    "PMID": "20648002",
+    "ResearchType": "Gut microbiota associated with phenotype",
+    "HumanOrMouse": "Human",
+    "Condition1": "Crohn Disease;Inflammation",
+    "Condition1ID": "D003424;D007249",
+    "Condition2": "Health",
+    "Condition2ID": "D006262",
+    "GutMicrobe": "Akkermansia muciniphila",
+    "GutMicrobeID": "gm0030",
+    "GutMicrobeNcbiID": "239935",
+    "Classification": "species",
+    "Alteration": "decrease",
+    "SequencingTechnology": "16s rRNA gene sequencing"
+  },
+  {
+    "Index": "91",
+    "PMID": "20648002",
+    "ResearchType": "Gut microbiota associated with phenotype",
+    "HumanOrMouse": "Human",
+    "Condition1": "Crohn Disease;Inflammation",
+    "Condition1ID": "D003424;D007249",
+    "Condition2": "Health",
+    "Condition2ID": "D006262",
+    "GutMicrobe": "Ruminococcus gnavus",
+    "GutMicrobeID": "gm1220",
+    "GutMicrobeNcbiID": "33038",
+    "Classification": "species",
+    "Alteration": "increase",
+    "SequencingTechnology": "16s rRNA gene sequencing"
+  }
+]

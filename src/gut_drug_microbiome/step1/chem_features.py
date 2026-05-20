@@ -19,7 +19,6 @@ MORGAN_BITS = 256
 MORGAN_RADIUS = 2
 MORGAN_GENERATOR = rdFingerprintGenerator.GetMorganGenerator(radius=MORGAN_RADIUS, fpSize=MORGAN_BITS)
 
-
 def _pick_smiles_series(frame: pd.DataFrame, smiles_columns: Iterable[str]) -> pd.Series:
     """Choose the first non-empty SMILES value across the preferred input columns."""
     series = pd.Series([math.nan] * len(frame), index=frame.index, dtype=object)

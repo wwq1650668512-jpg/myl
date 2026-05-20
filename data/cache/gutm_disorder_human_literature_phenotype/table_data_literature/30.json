@@ -1,0 +1,18 @@
+[
+  {
+    "Index": "30",
+    "PMID": "25271284",
+    "ResearchType": "Gut microbiota associated with phenotype",
+    "HumanOrMouse": "Human",
+    "Condition1": "Lupus Erythematosus, Systemic",
+    "Condition1ID": "D008180",
+    "Condition2": "Health",
+    "Condition2ID": "D006262",
+    "GutMicrobe": "Firmicutes",
+    "GutMicrobeID": "gm0332",
+    "GutMicrobeNcbiID": "1239",
+    "Classification": "phylum",
+    "Alteration": "decrease",
+    "SequencingTechnology": "16s rRNA gene sequencing"
+  }
+]

@@ -1,0 +1,19 @@
+{
+  "input_path": "/mnt/e/毕业/data/reference/promote_literature_seed_template.csv",
+  "output_path": "/mnt/e/毕业/data/reference/promote_literature_seed_table.csv",
+  "n_rows": 19,
+  "effect_direction_counts": {
+    "promote": 19
+  },
+  "effect_type_counts": {
+    "direct_promote": 12,
+    "functional_promote": 5,
+    "metabolism_supported_promote": 2
+  },
+  "evidence_level_counts": {
+    "medium": 11,
+    "high": 8
+  },
+  "n_rows_with_smiles": 8,
+  "n_rows_with_valid_rdkit_smiles": 8
+}

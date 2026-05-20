@@ -1,0 +1,12 @@
+{
+  "n_samples": 12,
+  "n_taxa": 6,
+  "scfa_taxa_requested": 3,
+  "scfa_taxa_found": 3,
+  "detrimental_taxa_requested": 2,
+  "detrimental_taxa_found": 2,
+  "treatment_label": "high_fiber",
+  "control_label": "control",
+  "plots_created": [],
+  "note": "This is a runnable reproduction scaffold inspired by 10.1126/science.aao5774. It is not an official author-released pipeline."
+}

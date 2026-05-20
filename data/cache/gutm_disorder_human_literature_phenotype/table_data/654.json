@@ -1,0 +1,34 @@
+[
+  {
+    "Index": "654",
+    "PMID": "26857969",
+    "ResearchType": "Gut microbiota associated with phenotype",
+    "HumanOrMouse": "Human",
+    "Condition1": "Cholangitis, Sclerosing",
+    "Condition1ID": "D015209",
+    "Condition2": "Inflammatory Bowel Diseases",
+    "Condition2ID": "D015212",
+    "GutMicrobe": "Barnesiellaceae",
+    "GutMicrobeID": "gm0097",
+    "GutMicrobeNcbiID": "2005519",
+    "Classification": "family",
+    "Alteration": "present",
+    "SequencingTechnology": "16s rRNA gene sequencing"
+  },
+  {
+    "Index": "654",
+    "PMID": "26857969",
+    "ResearchType": "Gut microbiota associated with phenotype",
+    "HumanOrMouse": "Human",
+    "Condition1": "Cholangitis, Sclerosing",
+    "Condition1ID": "D015209",
+    "Condition2": "Inflammatory Bowel Diseases",
+    "Condition2ID": "D015212",
+    "GutMicrobe": "Blautia",
+    "GutMicrobeID": "gm0117",
+    "GutMicrobeNcbiID": "572511",
+    "Classification": "genus",
+    "Alteration": "present",
+    "SequencingTechnology": "16s rRNA gene sequencing"
+  }
+]
