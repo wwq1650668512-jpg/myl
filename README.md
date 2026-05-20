@@ -126,10 +126,4 @@ python scripts/train_step1_baseline.py \
   --output-dir models/step1/baseline_random_split
 ```
 
-## 建议下一步
 
-1. 先把 Step 1 的原始数据落盘并统一 drug 与 taxon 标识。
-2. 用 Maier 数据做首个三分类 + 回归 baseline。
-3. 接 Zimmermann + Javdan 建 Step 2 的代谢标签表。
-4. 选一组真实 cohort 做 Step 3 的初始群落环境。
-5. 最后把 GMWI2 接成终端评估模块。
